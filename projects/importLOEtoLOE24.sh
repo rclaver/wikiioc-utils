@@ -210,11 +210,16 @@ function transformaJsonParcial() {
    jsonParcial+="$trans":"$e2",
 }
 
-# tractament d'un json parcial
+# tractament d'un json parcial. És una cadena del tipus '"key_principal":"[{"key1":"value1"}{"key2":"value2"}{...}]"'
 function processaJsonParcial() {
-   local jarray
    local json=$1
+   local novaKV=""
+   local jArray
+   local k
+   local v
+   local trans
    local key=${json//:*}      # extreu la key principal del json (la part anterior al signe ":")
+   local transkey=$(cercaEquiv $key)     #key principal transformada
    local value=${json#*:}     # extreu el valor (la part posterior al primer signe ":")
    value=${value//[\[\]]}     #elimina tots els claudàtors
    value=${value##\"}         #elimina les cometes '"' inicials
@@ -222,18 +227,29 @@ function processaJsonParcial() {
    value=${value//\}\{/\},\{} #afegeix "," com a separador de sub-elements json "{......}"
    echo -e "${CB_YLW}processaJsonParcial()${C_NONE} json=${json}\n\t${CB_YLW}key:${C_NONE}${key}\n\t${CB_YLW}value:${C_NONE}${value}"
 
+   echo -e "--- \t${CB_YLW}key=${C_NONE}${key}"
+   for ee in $(key); do
+      echo -e "--- \t\t${CB_YLW}ee=${C_NONE}${ee}"
+   done
+
+
    IFS=',' read -r -a jArray <<< "$value"    #crea un array fent split amb el caracter ","
    for e in "${jArray[@]}"; do
       echo -e "\t${CB_YLW}e=${C_NONE}${e}"
-      elem=${e//\\\"\\\"/\\\",\\\"}   #afegeix "," com a separador de sub-elements json \"......\":\"......\"
+      jElem=${e//\\\"\\\"/\\\",\\\"}   #afegeix "," com a separador de sub-elements json \"......\":\"......\"
+      echo -e "\t${CB_YLW}jElem=${C_NONE}${jElem}"
 
-      IFS=',' read -r -a aElem <<< "$elem"    #crea un array fent split amb el caracter ","
+      #transforma la parella key:value a la versió destí, és a dir, genera una nova key:value amb la key corresponent al destí
+      novaKV=""
+      IFS=',' read -r -a aElem <<< "$jElem"    #crea un array fent split amb el caracter ","
       for f in "${aElem[@]}"; do
          f=${f//[\{\}]}     #elimina totes les claus (inicial i final)
          echo -e "\t\t${CB_YLW}f=${C_NONE}${f}"
          k=${f//:*}         #key de la parella
-         k=${f//\\}         #elimina totes les barres davant cometes (inicial i final)
-         k=$(cercaEquiv $k) #key transformada
+         k=${k//\\\"}       #elimina totes les barres davant cometes (inicial i final)
+         v=${f#*:}          #value de la parella
+         novaKV+="\"${trans}\":${v}"
+         echo -e "\t\t\t${CB_YLW}novaKV=${C_NONE}${novaKV}"
       done
    done
 }

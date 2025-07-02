@@ -56,7 +56,7 @@ taulaEquiv=('nsProgramacio=nsProgramacio'
             'moodleCourseId=moodleCourseId'
             'dataFromMix=dataFromMix'
 )
-itinerariRecomanats=('m\u00f2dul'
+itinerariRecomanats=('m\\u00f2dul'
                      'itinerariRecomanatS1'
                      'itinerariRecomanatS2'
 )
@@ -112,10 +112,6 @@ einesAprenentatge=('tipus'
                    'opcionalitat'
                    'puntuable'
 )
-itinerarisRecomanats=('mòdul'
-                      'itinerariRecomanatS1'
-                      'itinerariRecomanatS2'
-)
 resultatsAprenentatge=('id'
                        'descripcio'
 )
@@ -131,14 +127,14 @@ taulaDadesUF=('bloc'
               'nom'
               'ordreImparticio'
               'hores'
-              'ponderació'
+              'ponderaci\\u00f3'
 )
 taulaDadesUn=('bloc'
               'unitat'
               'nom'
               'ordreImparticio'
               'hores'
-              'ponderació'
+              'ponderaci\\u00f3'
 )
 taulaDadesUnitats=('unitat formativa'
                    'unitat'
@@ -152,13 +148,13 @@ dadesQualificacioUFs=('unitat formativa'
                       'tipus qualificació'
                       'descripció qualificació'
                       'abreviació qualificació'
-                      'ponderació'
+                      'ponderaci\\u00f3'
 )
 dadesQualificacioUns=('unitat'
                       'tipus qualificació'
                       'descripció qualificació'
                       'abreviació qualificació'
-                      'ponderació'
+                      'ponderaci\\u00f3'
 )
 
 # Variables globals
@@ -218,7 +214,7 @@ function transformaJsonParcial() {
 function processaJsonParcial() {
    local jarray
    local json=$1
-   local key=${json//:*}      # extreu la key (la part anterior al signe ":")
+   local key=${json//:*}      # extreu la key principal del json (la part anterior al signe ":")
    local value=${json#*:}     # extreu el valor (la part posterior al primer signe ":")
    value=${value//[\[\]]}     #elimina tots els claudàtors
    value=${value##\"}         #elimina les cometes '"' inicials
@@ -233,7 +229,11 @@ function processaJsonParcial() {
 
       IFS=',' read -r -a aElem <<< "$elem"    #crea un array fent split amb el caracter ","
       for f in "${aElem[@]}"; do
+         f=${f//[\{\}]}     #elimina totes les claus (inicial i final)
          echo -e "\t\t${CB_YLW}f=${C_NONE}${f}"
+         k=${f//:*}         #key de la parella
+         k=${f//\\}         #elimina totes les barres davant cometes (inicial i final)
+         k=$(cercaEquiv $k) #key transformada
       done
    done
 }

@@ -162,6 +162,8 @@ dadesQualificacioUns=('unitat'
 )
 
 # Variables globals
+LANG=C.UTF-8
+
 C_NONE="\033[0m"
 CB_YLW="\033[1;33m"
 
@@ -187,7 +189,7 @@ function cercaEquiv() {
    local origen=${1//\"}   #elimina totes les cometes '"'
    for e in "${taulaEquiv[@]}"; do
       if [[ $e =~ $origen ]]; then
-         desti=${e##*=}  # extreu la part posterior al signe "="
+         desti=${e##*=}  # extreu la part posterior a l'últim signe "="
          break
       fi
    done
@@ -198,26 +200,51 @@ function cercaEquiv() {
 function processaJsonFinal() {
    local cadena="$1"
    local e1=${cadena//:*}  # extreu la part anterior al signe ":"
-   local e2=${cadena##*:}  # extreu la part posterior al signe ":"
+   local e2=${cadena##*:}  # extreu la part posterior a l'últim signe ":"
    local trans=$(cercaEquiv $e1)
    jsonFinal+="$trans":"$e2",
 }
 
 # afegeix un nou element a la cadena 'jsonParcial' prèvia transformació de l'origen en destí
-function processaJsonParcial() {
+function transformaJsonParcial() {
    local cadena="$1"
    local e1=${cadena//:*}  # extreu la part anterior al signe ":"
-   local e2=${cadena##*:}  # extreu la part posterior al signe ":"
+   local e2=${cadena##*:}  # extreu la part posterior a l'últim signe ":"
    local trans=$(cercaEquiv $e1)
    jsonParcial+="$trans":"$e2",
 }
 
-function buscaParelles() {
-   local restaArray="$1"
+# tractament d'un json parcial
+function processaJsonParcial() {
+   local jarray
+   local json=$1
+   local key=${json//:*}      # extreu la key (la part anterior al signe ":")
+   local value=${json#*:}     # extreu el valor (la part posterior al primer signe ":")
+   value=${value//[\[\]]}     #elimina tots els claudàtors
+   value=${value##\"}         #elimina les cometes '"' inicials
+   value=${value%%\"}         #elimina les cometes '"' finals
+   value=${value//\}\{/\},\{} #afegeix "," com a separador de sub-elements json "{......}"
+   echo -e "${CB_YLW}processaJsonParcial()${C_NONE} json=${json}\n\t${CB_YLW}key:${C_NONE}${key}\n\t${CB_YLW}value:${C_NONE}${value}"
+
+   IFS=',' read -r -a jArray <<< "$value"    #crea un array fent split amb el caracter ","
+   for e in "${jArray[@]}"; do
+      echo -e "\t${CB_YLW}e=${C_NONE}${e}"
+      elem=${e//\\\"\\\"/\\\",\\\"}   #afegeix "," com a separador de sub-elements json \"......\":\"......\"
+
+      IFS=',' read -r -a aElem <<< "$elem"    #crea un array fent split amb el caracter ","
+      for f in "${aElem[@]}"; do
+         echo -e "\t\t${CB_YLW}f=${C_NONE}${f}"
+      done
+   done
+}
+
+# Procés principal: tractament de tots els elements de l'arrayOrigen
+function proces() {
+   #local restaArray="$1"
    local cadenaComp
    local valor
    local iComp=0  #indicador de 'valor' compost (conté sub-elements json)
-   local claudat=0  #indicador de nivell de sub-element json (nombre de claudàtors oberts)
+   local claud=0  #indicador de nivell de sub-element json (nombre de claudàtors oberts)
 
    for e in "${arrayOrigen[@]}"; do
       valor=${e##*:}  # extreu la part posterior al signe ":"
@@ -232,18 +259,21 @@ function buscaParelles() {
             #simple+=("${e// /\\ }")
          else
             iComp=1
-            cadenaComp+="$e"
+            let claud++
+            cadenaComp="$e"
          fi
       else
          #la part 'valor' és part d'una cadena composta (conté sub-elements json)
          cadenaComp+="$e"
-         echo -e "${CB_YLW}\tcadenaComp=${cadenaComp}${C_NONE}"
+         echo -e "${CB_YLW}e=${C_NONE}${e}"
+         echo -e "${CB_YLW}cadenaComp=${C_NONE}${cadenaComp}"
          if [[ $e =~ "[" ]]; then
-            let claudat++
-            echo -e "${CB_YLW}\t\tclaud=${claud}${C_NONE}"
+            let claud++
+            echo -e "${CB_YLW}\tclaud1=${claud}\n$C_NONE"
          elif [[ $e =~ "]" ]]; then
-            let claudat--
-            if [[ $claudat == 0 ]]; then
+            let claud--
+            echo -e "${CB_YLW}\tclaud0=${claud}\n$C_NONE"
+            if [[ $claud == 0 ]]; then
                processaJsonParcial "$cadenaComp"
                iComp=0
             fi
@@ -251,7 +281,6 @@ function buscaParelles() {
       fi
    done
 }
-
 
 # ---------------------
 # INICI
@@ -269,7 +298,7 @@ processarArxiuDades
    echo
 
 # processa l'array
-buscaParelles $arrayOrigen
+proces $arrayOrigen
 
 echo "........."
 echo "RESULTATS"

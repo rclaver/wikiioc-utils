@@ -16,7 +16,7 @@ taulaEquiv=('nsProgramacio=nsProgramacio'
             'professors=professors'
             'coordinador=coordinador'
             'urlMaterialDidactic=urlMaterialDidactic'
-            'dedicacio=dedicacio'
+            'dedicacio=dedicacikeyOrigeno'
             'requerimentsMatricula=requerimentsMatricula'
             'descripcio=descripcio'
             'itinerarisRecomanats=itinerarisRecomanats'
@@ -157,6 +157,7 @@ dadesQualificacioUns=('unitat'
                       'ponderaci\\u00f3'
 )
 
+#
 # Variables globals
 LANG=C.UTF-8
 
@@ -168,8 +169,10 @@ jsonFinal="{"main":{"
 jsonParcial=""
 
 
+#
 # llegeix l'arxiu mdpr, fragmenta la cadena json obtinguda truncant amb ","
 # i guarda els elements en format array a 'arrayOrigen'
+#
 function processarArxiuDades() {
    local arxiuJson=~/projectes/wiki18/data/mdprojects/docs/loe_1/ptfploe/meta.mdpr
    local contingut=$(cat $arxiuJson)
@@ -179,8 +182,10 @@ function processarArxiuDades() {
 }
 
 
+#
 # Cerca a la Taula d'equivalències 'taulaEquiv' la parella que conté
 # la clau origen sol·licitada i retorna la parella associada
+#
 function cercaEquiv() {
    local origen=${1//\"}   #elimina totes les cometes '"'
    for e in "${taulaEquiv[@]}"; do
@@ -192,7 +197,9 @@ function cercaEquiv() {
    echo $desti
 }
 
+#
 # afegeix un nou element a la cadena de sortida 'jsonFinal' prèvia transformació de l'origen en destí
+#
 function processaJsonFinal() {
    local cadena="$1"
    local e1=${cadena//:*}  # extreu la part anterior al signe ":"
@@ -201,7 +208,9 @@ function processaJsonFinal() {
    jsonFinal+="$trans":"$e2",
 }
 
+#
 # afegeix un nou element a la cadena 'jsonParcial' prèvia transformació de l'origen en destí
+#
 function transformaJsonParcial() {
    local cadena="$1"
    local e1=${cadena//:*}  # extreu la part anterior al signe ":"
@@ -210,51 +219,66 @@ function transformaJsonParcial() {
    jsonParcial+="$trans":"$e2",
 }
 
-# tractament d'un json parcial. És una cadena del tipus '"key_principal":"[{"key1":"value1"}{"key2":"value2"}{...}]"'
+#
+# Tractament d'un json parcial.
+# es tracta d'una cadena del tipus '"key_principal":"[{"key1":"value1"}{"key2":"value2"}{...}]"'
+#
 function processaJsonParcial() {
    local json=$1
-   local novaKV=""
-   local jArray
-   local k
-   local v
-   local trans
-   local key=${json//:*}      # extreu la key principal del json (la part anterior al signe ":")
-   local transkey=$(cercaEquiv $key)     #key principal transformada
-   local value=${json#*:}     # extreu el valor (la part posterior al primer signe ":")
-   value=${value//[\[\]]}     #elimina tots els claudàtors
-   value=${value##\"}         #elimina les cometes '"' inicials
-   value=${value%%\"}         #elimina les cometes '"' finals
-   value=${value//\}\{/\},\{} #afegeix "," com a separador de sub-elements json "{......}"
-   echo -e "${CB_YLW}processaJsonParcial()${C_NONE} json=${json}\n\t${CB_YLW}key:${C_NONE}${key}\n\t${CB_YLW}value:${C_NONE}${value}"
+   local keyOrigen=${json//:*}               # extreu la key principal del json (la part anterior al signe ":")
+   keyOrigen=${keyOrigen//\"}                # elimina les cometes
+   local transKey=$(cercaEquiv $keyOrigen)   # key principal transformada en la seva equivalent
 
-   echo -e "--- \t${CB_YLW}key=${C_NONE}${key}"
-   for ee in $(key); do
-      echo -e "--- \t\t${CB_YLW}ee=${C_NONE}${ee}"
-   done
+   if [[ "$keyOrigen" == "$transKey" ]]; then
+      #incorpora l'element sense canvis al jsonFinal
+      jsonFinal+=$json
+   else
+      local novaKV=""
+      local jArray
+      local k
+      local v
+      local trans
 
+      local value=${json#*:}     # extreu el valor (la part posterior al primer signe ":")
+      value=${value//[\[\]]}     #elimina tots els claudàtors
+      value=${value##\"}         #elimina les cometes '"' inicials
+      value=${value%%\"}         #elimina les cometes '"' finals
+      value=${value//\}\{/\},\{} #afegeix "," com a separador de sub-elements json "{......}"
 
-   IFS=',' read -r -a jArray <<< "$value"    #crea un array fent split amb el caracter ","
-   for e in "${jArray[@]}"; do
-      echo -e "\t${CB_YLW}e=${C_NONE}${e}"
-      jElem=${e//\\\"\\\"/\\\",\\\"}   #afegeix "," com a separador de sub-elements json \"......\":\"......\"
-      echo -e "\t${CB_YLW}jElem=${C_NONE}${jElem}"
+      echo -e "${CB_YLW}processaJsonParcial()${C_NONE} json=${json}\n\t${CB_YLW}keyOrigen:${C_NONE}${keyOrigen}\n\t${CB_YLW}value:${C_NONE}${value}"
 
-      #transforma la parella key:value a la versió destí, és a dir, genera una nova key:value amb la key corresponent al destí
-      novaKV=""
-      IFS=',' read -r -a aElem <<< "$jElem"    #crea un array fent split amb el caracter ","
-      for f in "${aElem[@]}"; do
-         f=${f//[\{\}]}     #elimina totes les claus (inicial i final)
-         echo -e "\t\t${CB_YLW}f=${C_NONE}${f}"
-         k=${f//:*}         #key de la parella
-         k=${k//\\\"}       #elimina totes les barres davant cometes (inicial i final)
-         v=${f#*:}          #value de la parella
-         novaKV+="\"${trans}\":${v}"
-         echo -e "\t\t\t${CB_YLW}novaKV=${C_NONE}${novaKV}"
+      IFS=',' read -r -a jArray <<< "$value"    #crea un array fent split amb el caracter ","
+      for e in "${jArray[@]}"; do
+         echo -e "\t${CB_YLW}....e=${C_NONE}${e}"
+         jElem=${e//\\\"\\\"/\\\",\\\"}   #afegeix "," com a separador de sub-elements json \"......\":\"......\"
+         echo -e "\t${CB_YLW}jElem=${C_NONE}${jElem}"
+
+         #transforma la parella key:value a la versió destí, és a dir, genera una nova key:value amb la key corresponent al destí
+         novaKV=""
+         IFS=',' read -r -a aElem <<< "$jElem"    #crea un array fent split amb el caracter ","
+         for f in "${aElem[@]}"; do
+            f=${f//[\{\}]}     #elimina totes les claus "{}" (inicial i final)
+            echo -e "\t\t${CB_YLW}f=${C_NONE}${f}"
+            k=${f//:*}         #key de la parella
+            k=${k//\\\"}       #elimina totes les barres davant cometes (inicial i final)
+            v=${f#*:}          #value de la parella
+
+            eval "arrOrigen=\$(echo" \${$keyOrigen[@]} ")"  #captura l'estructura de l'array indicat a 'keyOrigen'
+            eval "arrTrans=\$(echo" \${$transKey[@]} ")"    #captura l'estructura de l'array indicat a 'transKey'
+            for exx in ${arrOrigen[@]}; do
+               echo -e "--- keyOrigen-arrOrigen ---\t${CB_YLW}exx=${C_NONE}${exx}"
+            done
+
+            #novaKV+="\"${trans}\":${v}"
+            #echo -e "\t\t\t${CB_YLW}novaKV=${C_NONE}${novaKV}"
+         done
       done
-   done
+   fi
 }
 
+#
 # Procés principal: tractament de tots els elements de l'arrayOrigen
+#
 function proces() {
    #local restaArray="$1"
    local cadenaComp
@@ -281,14 +305,14 @@ function proces() {
       else
          #la part 'valor' és part d'una cadena composta (conté sub-elements json)
          cadenaComp+="$e"
-         echo -e "${CB_YLW}e=${C_NONE}${e}"
-         echo -e "${CB_YLW}cadenaComp=${C_NONE}${cadenaComp}"
+         echo -e "P ${CB_YLW}e=${C_NONE}${e}"
+         echo -e "P ${CB_YLW}cadenaComp=${C_NONE}${cadenaComp}"
          if [[ $e =~ "[" ]]; then
             let claud++
-            echo -e "${CB_YLW}\tclaud1=${claud}\n$C_NONE"
+            echo -e "P ${CB_YLW}\tclaud1=${claud}\n$C_NONE"
          elif [[ $e =~ "]" ]]; then
             let claud--
-            echo -e "${CB_YLW}\tclaud0=${claud}\n$C_NONE"
+            echo -e "P ${CB_YLW}\tclaud0=${claud}\n$C_NONE"
             if [[ $claud == 0 ]]; then
                processaJsonParcial "$cadenaComp"
                iComp=0

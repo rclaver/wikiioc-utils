@@ -16,7 +16,7 @@ taulaEquiv=('nsProgramacio=nsProgramacio'
             'professors=professors'
             'coordinador=coordinador'
             'urlMaterialDidactic=urlMaterialDidactic'
-            'dedicacio=dedicacikeyOrigeno'
+            'dedicacio=dedicacio'
             'requerimentsMatricula=requerimentsMatricula'
             'descripcio=descripcio'
             'itinerarisRecomanats=itinerarisRecomanats'
@@ -189,7 +189,7 @@ function cercaEquiv() {
    local e
    local origen=${1//\"}   #elimina totes les cometes '"'
    for e in "${taulaEquiv[@]}"; do
-      if [[ $e =~ $origen ]]; then
+      if [[ "${e}" =~ "${origen}=" ]]; then
          desti=${e##*=}  # extreu la part posterior a l'últim signe "="
          break
       fi
@@ -220,18 +220,15 @@ function processaJsonParcial() {
 
    if [[ "$keyOrigen" == "$transKey" ]]; then
       #incorpora l'element sense canvis al jsonFinal
-      jsonFinal+=$json
+      jsonFinal+="${json},"   #afegeix coma de separació del següent element
    else
-      local jArray elem jElem e k v i parcial
+      local arrTrans jArray elem jElem e k v i parcial
       local novaKV="\"${transKey}\":\"["
-      #local arrOrigen
-      local arrTrans
 
-      #eval "arrOrigen=\$(echo" \${$keyOrigen[@]} ")"  #captura l'estructura de l'array indicat a 'keyOrigen'
-      eval "arrTrans=\$(echo" \${$transKey[@]} ")"    #captura l'estructura de l'array indicat a 'transKey'
-      read -r -a arrTrans <<< "$arrTrans"     #crea un array fent split amb el caracter " "
+      eval "arrTrans=\$(echo" \${$transKey[@]} ")" #captura l'estructura de l'array indicat a 'transKey'
+      read -r -a arrTrans <<< "$arrTrans"          #crea un array fent split amb el caracter " "
 
-      local valueOrigen=${json#*:}           # extreu el valor (la part posterior al primer signe ":")
+      local valueOrigen=${json#*:}           #extreu el valor (la part posterior al primer signe ":")
       valueOrigen=${valueOrigen//[\[\]]}     #elimina tots els claudàtors
       valueOrigen=${valueOrigen##\"}         #elimina les cometes '"' inicials
       valueOrigen=${valueOrigen%%\"}         #elimina les cometes '"' finals
@@ -248,8 +245,8 @@ function processaJsonParcial() {
          jElem=$(echo "$jElem" | sed -E 's/(:[0-9]+)\\"/\1,\\"/g')  #afegeix "," com a separador de sub-elements json \"......\":99
          echo -e "\t${CB_YLW}jElem=${C_NONE}${jElem}"
 
-         #transforma la parella key:value a la versió destí, és a dir, genera una nova key:value amb la key corresponent al destí
-         IFS=',' read -r -a aElem <<< "$jElem"    #crea un array fent split amb el caracter ","
+         # Transforma la parella key:value a la versió destí, és a dir, genera una nova key:value amb la key corresponent al destí
+         IFS=',' read -r -a aElem <<< "$jElem"  #crea un array fent split amb el caracter ","
 
          parcial="{"
          i=0
@@ -262,7 +259,6 @@ function processaJsonParcial() {
             v=${e#*:}          #value de la parella
             echo -e "\t${CB_YLW}k=${C_NONE}${k} -- ${CB_YLW}v=${C_NONE}${v}"
 
-            #echo -e "\t\t arrOrigen ---\t${CB_YLW}arrOrigen[$i]=${C_NONE}${arrOrigen[$i]}"
             echo -e "\t\t arrTrans ----\t${CB_YLW}arrTrans[$i]=${C_NONE}${arrTrans[$i]}"
             #afegeix el valor -per posició a l'array- a la key transformada (sempre i quan existeixi)
             if [[ "arrTrans[$i]" != "" ]]; then
@@ -272,10 +268,10 @@ function processaJsonParcial() {
          done
          parcial=${parcial%,}    #elimina la coma final
          novaKV+="${parcial}},"
-         echo -e "\t\t\t${CB_YLW}novaKV=${C_NONE}${novaKV}"
+         echo -e "\t\t${CB_YLW}novaKV=${C_NONE}${novaKV}"
       done
-      novaKV=${novaKV%,}    #elimina la coma final
-      jsonFinal+=$novaKV
+      novaKV=${novaKV%,}            #elimina la coma final
+      jsonFinal+="${novaKV}]\","    #afegeix claudàtor de tancament, cometes finals i coma
    fi
 }
 

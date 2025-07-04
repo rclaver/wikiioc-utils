@@ -228,17 +228,22 @@ function processaJsonParcial() {
       eval "arrTrans=\$(echo" \${$transKey[@]} ")" #captura l'estructura de l'array indicat a 'transKey'
       read -r -a arrTrans <<< "$arrTrans"          #crea un array fent split amb el caracter " "
 
-      local valueOrigen=${json#*:}           #extreu el valor (la part posterior al primer signe ":")
-      valueOrigen=${valueOrigen//[\[\]]}     #elimina tots els claudàtors
-      valueOrigen=${valueOrigen##\"}         #elimina les cometes '"' inicials
-      valueOrigen=${valueOrigen%%\"}         #elimina les cometes '"' finals
-      valueOrigen=${valueOrigen//\}\{/\},\{} #afegeix "," com a separador de sub-elements json "{......}"
+      local valueOrigen=${json#*:}            #extreu el valor (la part posterior al primer signe ":")
+      valueOrigen=${valueOrigen//[\[\]]}      #elimina tots els claudàtors
+      valueOrigen=${valueOrigen##\"}          #elimina les cometes '"' inicials
+      valueOrigen=${valueOrigen%%\"}          #elimina les cometes '"' finals
+      valueOrigen=${valueOrigen//\},\{/\};\{} #canvia "," per ";" com a separador de sub-elements json "{......}"
 
-      echo -e "${CB_YLW}processaJsonParcial()${C_NONE} json=${json}\n"
-      echo -e "\t${CB_YLW}keyOrigen:${C_NONE}${keyOrigen}\n\t${CB_YLW}valueOrigen:${C_NONE}${valueOrigen}"
+      echo -e "${CB_YLW}processaJsonParcial()${C_NONE} json=${json}"
+      echo -e "\t${CB_YLW}keyOrigen:${C_NONE}${keyOrigen}\n\t${CB_YLW}valueOrigen:${C_NONE}${valueOrigen}\n"
 
       # Converteix la part $valueOrigen en un array i processa els elements
-      IFS=',' read -r -a jArray <<< "$valueOrigen"    #crea un array fent split amb el caracter ","
+      IFS=';' read -r -a jArray <<< "$valueOrigen"    #crea un array fent split amb el caracter ";"
+
+      for e in "${jArray[@]}"; do
+         echo -e "${CB_YLW}jArray[n] = ${C_NONE}${e}"
+      done
+      echo -e "\n"
 
       for elem in "${jArray[@]}"; do
          jElem=${elem//\\\"\\\"/\\\",\\\"}      #afegeix "," com a separador de sub-elements json \"......\":\"......\"
@@ -259,16 +264,16 @@ function processaJsonParcial() {
             v=${e#*:}          #value de la parella
             echo -e "\t${CB_YLW}k=${C_NONE}${k} -- ${CB_YLW}v=${C_NONE}${v}"
 
-            echo -e "\t\t arrTrans ----\t${CB_YLW}arrTrans[$i]=${C_NONE}${arrTrans[$i]}"
+            echo -e "\t\tarrTrans -- ${CB_YLW}arrTrans[${i}]=${C_NONE}${arrTrans[${i}]}"
             #afegeix el valor -per posició a l'array- a la key transformada (sempre i quan existeixi)
-            if [[ "arrTrans[$i]" != "" ]]; then
-               parcial+="\\\"${arrTrans[$i]}\\\":${v},"
+            if [[ "arrTrans[${i}]" != "" ]]; then
+               parcial+="\\\"${arrTrans[${i}]}\\\":${v},"
             fi
             (( i++ ))
          done
          parcial=${parcial%,}    #elimina la coma final
          novaKV+="${parcial}},"
-         echo -e "\t\t${CB_YLW}novaKV=${C_NONE}${novaKV}"
+         echo -e "\t\t${CB_YLW}novaKV=${C_NONE}${novaKV}\n"
       done
       novaKV=${novaKV%,}            #elimina la coma final
       jsonFinal+="${novaKV}]\","    #afegeix claudàtor de tancament, cometes finals i coma
@@ -279,7 +284,7 @@ function processaJsonParcial() {
 # Procés principal: tractament de tots els elements de l'arrayOrigen
 #
 function proces() {
-   local cadenaComp valor e
+   local cadenaComp e valor
    local iComp=0  #indicador de 'valor' compost (conté sub-elements json)
    local claud=0  #indicador de nivell de sub-element json (nombre de claudàtors oberts)
 
@@ -294,20 +299,20 @@ function proces() {
          else
             iComp=1
             let claud++
-            cadenaComp="$e"
+            cadenaComp="${e},"
          fi
       else
          #la part 'valor' és part d'una cadena composta (conté sub-elements json)
-         cadenaComp+="$e"
+         cadenaComp+="${e},"
          echo -e "P ${CB_YLW}e=${C_NONE}${e}"
          echo -e "P ${CB_YLW}cadenaComp=${C_NONE}${cadenaComp}"
          if [[ $e =~ "[" ]]; then
             let claud++
-            echo -e "P ${CB_YLW}\tclaud1=${claud}\n$C_NONE"
          elif [[ $e =~ "]" ]]; then
             let claud--
-            echo -e "P ${CB_YLW}\tclaud0=${claud}\n$C_NONE"
             if [[ $claud == 0 ]]; then
+               echo -e "P ${CB_YLW}claud = ${claud}${C_NONE}\n"
+               cadenaComp=${cadenaComp%,}   #elimina la coma final
                processaJsonParcial "$cadenaComp"
                iComp=0
             fi
@@ -337,6 +342,7 @@ proces $arrayOrigen
 echo "~~~~~~~~"
 echo "RESULTAT"
 echo "~~~~~~~~"
+jsonFinal=${jsonFinal%,}   #elimina la coma final
 jsonFinal+="}}"
 echo -e "${CB_YLW}--- jsonFinal ---${C_NONE}\n$jsonFinal"
 

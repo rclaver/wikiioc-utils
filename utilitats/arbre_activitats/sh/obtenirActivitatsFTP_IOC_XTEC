@@ -1,0 +1,11 @@
+#!/bin/bash
+
+rm -r ../ActivityUtil/*
+
+sftp materials@ftp-ioc.xtec.cat << ORDENES_FTP
+lcd ../ActivityUtil
+cd /html/FP/Recursos/ActivityUtil
+get -rp *
+bye
+ORDENES_FTP
+

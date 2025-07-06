@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Refer els links del directori ActivityUtil al servidor ftp-ioc.xtec.cat
+# - elimina el directori corresponent al directori base ./ActivityUtil
+# - crea un link simbòlic de ./ActivityUtil/nom_de_projecte/directori en ./ActivityUtil
+
+REMOTE_DIR="/html/FP/Recursos/ActivityUtil_nou"
+
+(echo cd $REMOTE_DIR
+cat links_sftp_activitats.txt
+echo bye) | sftp materials@ftp-ioc.xtec.cat

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+here=$(pwd)
+local=/home/wikidev/wiki18/data
+remote=/home/dokuwiki/wiki18/data
+activi=documents_fp/docencia/activitats
+
+sftp dokuwiki@dokuwiki.ioc.cat - << ORDENES_FTP
+lcd $local/mdprojects/$activi
+cd $remote/mdprojects/$activi
+get -rf *
+
+lcd $local/pages/$activi
+cd $remote/pages/$activi
+get -rf *
+bye
+ORDENES_FTP
+
+chown -R wikidev:www-data $local/mdprojects/$activi/*
+chown -R wikidev:www-data $local/pages/$activi/*

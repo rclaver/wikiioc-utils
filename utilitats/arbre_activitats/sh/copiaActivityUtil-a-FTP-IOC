@@ -1,0 +1,15 @@
+#!/bin/bash
+
+echo -e "---------------------------------------------------------"
+echo -e " Inici de l'enviament de ActivityUtil al servidor ftp-ioc"
+echo -e "---------------------------------------------------------"
+echo -e "Copia el directori /home/zwikidev/ActivityUtil/, ja processat, ja reordenat,"
+echo -e "a ftp-ioc.xtec.cat/html/FP/Recursos/ActivityUtil_nou"
+
+sftp materials@ftp-ioc.xtec.cat << ORDENES_FTP
+lcd /home/zwikidev/ActivityUtil
+cd /html/FP/Recursos/ActivityUtil_nou
+put -rp *
+bye
+ORDENES_FTP
+

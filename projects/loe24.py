@@ -6,7 +6,7 @@ Created on Fri Jul  4 20:31:39 2025
 @description: Importació de dades d'un pla de treball LOE a un nou pla de treball LOE24
 """
 
-import json, re
+import json, re, os
 
 # Taula de equivalències ("original LOE": "destí LOE24")
 taulaEquiv = {
@@ -87,25 +87,76 @@ dadesQualificacioUFs = {
 }
 
 """
-Llegeix l'arxiu mdpr, fragmenta la cadena json obtinguda truncant amb ","
-i guarda els elements en format array a 'arrayOrigen'
+Llegeix l'arxiu mdpr i crea un json a 'dadesJson'
 """
-def processarArxiuDades():
-    arxiuMdpr = "~/projectes/wiki18/data/mdprojects/docs/loe_1/ptfploe/meta.mdpr"
-    if (os.path.exists(arxiuMdpr)):
-        contingut = open(arxiuMdpr).read()
-        dadesJson = json.loads(contingut)
-        return true
-    else:
-        print("Arxiu no trobat")
-        return false
+def processarArxiuDades(arxiu):
+   global dadesJson
+   if (os.path.exists(arxiu)):
+      contingut = open(arxiu).read()
+      dadesJson = json.loads(contingut)
+      return True
+   else:
+      print("Arxiu no trobat")
+      return False
+
+"""
+ Cerca a la Taula d'equivalències 'taulaEquiv' la parella que conté
+ la clau origen sol·licitada i retorna la parella associada
+"""
+def cercaEquiv(origen):
+   desti = taulaEquiv[origen]
+   return desti
+
+"""
+ Afegeix un nou element a la cadena de sortida 'jsonFinal' prèvia transformació de l'origen en destí
+"""
+def processaJsonFinal(key, value):
+   global jsonFinal
+   trans = cercaEquiv(key)
+   jsonFinal += '\"' + trans + '\":' + value + ','
 
 
+def processaJsonParcial(cadenaComp):
+   jstring = json.loads(cadenaComp)
 
+"""
+ Procés principal: tractament de tots els elements de l'arrayOrigen
+"""
+def proces():
+   global dadesJson
+   iComp = 0  #indicador de 'valor' compost (conté sub-elements json)
+   claud = 0  #indicador de nivell de sub-element json (nombre de claudàtors oberts)
+
+   for key, value in dadesJson:
+      if (iComp == 0):
+         # la part 'valor' és una cadena simple sense sub-elements json
+         if (value == '"[]"'):
+            processaJsonFinal(key, value)
+         elif (value[0] != "["):
+            processaJsonFinal(key, value)
+         else:
+            iComp = 1
+            claud+= 1
+            cadenaComp = "${e},"
+      else:
+         #la part 'valor' és part d'una cadena composta (conté sub-elements json)
+         cadenaComp += "${e},"
+         if (value[0] == "["):
+            claud += 1
+         elif (value[-1] == "]"):
+            claud -= 1
+            if (claud == 0):
+               cadenaComp = cadenaComp[:-1]   #elimina la coma final
+               processaJsonParcial(cadenaComp)
+               iComp = 0
 
 
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 print("Importació de dades d'un pla de treball LOE a un nou pla de treball LOE24")
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
-if processarArxiuDades():
+arxiuMdpr = "~/projectes/wiki18/data/mdprojects/docs/loe_1/ptfploe/meta.mdpr"
+jsonFinal = '{"main":{'
+
+if processarArxiuDades(arxiuMdpr):
+   proces()

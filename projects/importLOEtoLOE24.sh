@@ -146,7 +146,9 @@ function processaJsonParcial() {
    keyOrigen=${keyOrigen//\"}                # elimina les cometes
    local transKey=$(cercaEquiv $keyOrigen)   # key principal transformada en la seva equivalent
 
-   if [[ "$keyOrigen" == "$transKey" ]]; then
+   if [[ "$transKey" == "" ]]; then
+      # no s'ha d'incloure aquest element
+   elif [[ "$keyOrigen" == "$transKey" ]]; then
       #incorpora l'element sense canvis al jsonFinal
       jsonFinal+="${json},"   #afegeix coma de separació del següent element
    else

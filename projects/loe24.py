@@ -113,11 +113,18 @@ def cercaEquiv(origen):
 def processaJsonFinal(key, value):
    global jsonFinal
    trans = cercaEquiv(key)
-   jsonFinal += '\"' + trans + '\":' + value + ','
+   jsonFinal += '"' + trans + '":' + value + ','
 
 
 def processaJsonParcial(cadenaComp):
    jstring = json.loads(cadenaComp)
+   keyOrigen = cadenaComp.keys()
+   transKey = cercaEquiv(keyOrigen)
+   if (keyOrigen == transKey):
+      #incorpora l'element sense canvis al jsonFinal
+      jsonFinal += jstring + ","   #afegeix coma de separació del següent element
+   else:
+
 
 """
  Procés principal: tractament de tots els elements de l'arrayOrigen

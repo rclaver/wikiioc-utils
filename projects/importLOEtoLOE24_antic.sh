@@ -3,29 +3,78 @@
 # Importació de dades des d'un projecte PT LOE a un projecte PT LOE24
 
 # Taula de equivalències (original=destí)
-taulaEquiv=('taulaDadesUF:taulaDadesUn'
+taulaEquiv=('nsProgramacio:nsProgramacio'
+            'nouCurr:nouCurr'
+            'pesPAFnouCurr:pesPAFnouCurr'
+            'semestre:semestre'
+            'tipusBlocModul:tipusBlocModul'
+            'cicle:cicle'
+            'modulId:modulId'
+            'modul:modul'
+            'durada:durada'
+            'duradaCicle:duradaCicle'
+            'professors:professors'
+            'coordinador:coordinador'
+            'urlMaterialDidactic:urlMaterialDidactic'
+            'dedicacio:dedicacio'
+            'requerimentsMatricula:requerimentsMatricula'
+            'descripcio:descripcio'
+            'itinerarisRecomanats:itinerarisRecomanats'
+            'taulaDadesUF:taulaDadesUn'
             'taulaDadesUnitats:taulaUnitatRAs'
+            'einesAprenentatge:einesAprenentatge'
+            'resultatsAprenentatge:resultatsAprenentatge'
+            'activitatsAprenentatge:activitatsAprenentatge'
+            'avaluacioInicial:avaluacioInicial'
+            'calendari:calendari'
+            'datesAC:datesAC'
+            'hiHaSolucioPerAC:hiHaSolucioPerAC'
+            'datesEAF:datesEAF'
+            'treballEquipEAF:treballEquipEAF'
+            'hiHaSolucioPerEAF:hiHaSolucioPerEAF'
+            'hiHaEnunciatRecuperacioPerEAF:hiHaEnunciatRecuperacioPerEAF'
+            'hiHaRecuperacioPerJT:hiHaRecuperacioPerJT'
+            'datesJT:datesJT'
+            'notaMinimaAC:notaMinimaAC'
+            'notaMinimaEAF:notaMinimaEAF'
+            'notaMinimaJT:notaMinimaJT'
+            'dataPaf11:dataPaf11'
+            'dataPaf12:dataPaf12'
+            'dataPaf21:dataPaf21'
+            'dataPaf22:dataPaf22'
+            'dataQualificacioPaf1:dataQualificacioPaf1'
+            'dataQualificacioPaf2:dataQualificacioPaf2'
+            'notaMinimaPAF:notaMinimaPAF'
             'dadesQualificacioUFs:dadesQualificacioUns'
+            'duradaPAF:duradaPAF'
+            'dadesExtres:dadesExtres'
+            'plantilla:plantilla'
+            'autor:autor'
+            'responsable:responsable'
+            'supervisor:supervisor'
+            'fitxercontinguts:fitxercontinguts'
+            'moodleCourseId:moodleCourseId'
+            'dataFromMix:dataFromMix'
 )
-#nota: els elements d'una taula es separen amb espai
-#substituim els espais dels noms dels elements per @
+
+# canvi de nom
 taulaDadesUF=('bloc:bloc'
-              'unitat@formativa:unitat'
+              'unitat formativa:unitat'
               'nom:nom'
               'ordreImparticio:ordreImparticio'
               'hores:hores'
-              'ponderaci\\u00f3:ponderaci\\u00f3"'
+              'ponderaci\\u00f3:ponderaci\\u00f3'
 )
-taulaDadesUnitats=('unitat@formativa:unitat'
+taulaDadesUnitats=('unitat formativa:unitat'
                    'unitat:RA'
                    'nom:'
-                   'hores:"'
+                   'hores:'
 )
-dadesQualificacioUFs=('unitat@formativa:unitat'
-                      'tipus@qualificació:tipus@qualificació'
-                      'descripció@qualificació:descripció@qualificació'
-                      'abreviació@qualificació:abreviació@qualificació'
-                      'ponderaci\\u00f3:ponderaci\\u00f3"'
+dadesQualificacioUFs=('unitat formativa:unitat'
+                      'tipus qualificació:tipus qualificació'
+                      'descripció qualificació:descripció qualificació'
+                      'abreviació qualificació:abreviació qualificació'
+                      'ponderaci\\u00f3:ponderaci\\u00f3'
 )
 
 #
@@ -36,15 +85,15 @@ C_NONE="\033[0m"
 CB_YLW="\033[1;33m"
 
 declare -a arrayOrigen
-jsonFinal="{\"main\":{"
+jsonFinal="{"main":{"
+
 
 #
 # llegeix l'arxiu mdpr, fragmenta la cadena json obtinguda truncant amb ","
 # i guarda els elements en format array a 'arrayOrigen'
 #
 function processarArxiuDades() {
-   #local arxiuJson=~/projectes/wiki18/data/mdprojects/docs/loe_1/ptfploe/meta.mdpr
-   local arxiuJson=~/Escritorio/meta.mdpr
+   local arxiuJson=~/projectes/wiki18/data/mdprojects/docs/loe_1/ptfploe/meta.mdpr
    local contingut=$(cat $arxiuJson)
    dadesJson=${contingut##\{\"main\":\{}  #elimina, des del principi, la part major que coincideixi amb el patró
    dadesJson=${dadesJson%\}\}}            #elimina, des del final, la part menor que coincideixi amb el patró
@@ -64,35 +113,12 @@ function getValue() {
 # Cerca a la Taula d'equivalències 'taulaEquiv' la parella que conté
 # la clau origen sol·licitada i retorna la parella associada
 #
-function cercaTaulaEquiv() {
-   local e
+function cercaEquiv() {
+   local e desti
    local origen=${1//\"}   #elimina totes les cometes '"'
-   local desti=$origen
    for e in "${taulaEquiv[@]}"; do
       if [[ "${e}" =~ "${origen}:" ]]; then
-         desti=${e##*:}  #extreu la part posterior a l'últim signe ":"
-         break
-      fi
-   done
-   echo $desti
-}
-
-#
-# Cerca a la taula d'equivalències especificada la parella que conté
-# la clau origen sol·licitada i retorna la parella associada
-#
-function cercaEquiv() {
-   local e taula
-   local nomTaula=$1
-   local korigen=$2
-   local desti=""
-   eval "taula=\$(echo" \${$nomTaula[@]} ")" #captura l'estructura de l'array indicat amb el nom 'nomTaula'
-   read -r -a taula <<< "$taula"             #converteix la cadena $taula en un array fent split amb el caracter " "
-
-   for e in "${taula[@]}"; do
-      e=${e/@/ }   #subtitueix el caracter @ per espai
-      if [[ "${e}" =~ "${korigen}:" ]]; then
-         desti=${e##*:}  #extreu la part posterior a l'últim signe ":"
+         desti=${e##*:}  # extreu la part posterior a l'últim signe ":"
          break
       fi
    done
@@ -106,7 +132,7 @@ function processaJsonFinal() {
    local cadena="$1"
    local e1=${cadena//:*}  # extreu la part anterior al signe ":"
    local e2=${cadena##*:}  # extreu la part posterior a l'últim signe ":"
-   local trans=$(cercaTaulaEquiv $e1)
+   local trans=$(cercaEquiv $e1)
    jsonFinal+="\"$trans\"":"$e2",
 }
 
@@ -118,16 +144,19 @@ function processaJsonParcial() {
    local json=$1
    local keyOrigen=${json//:*}               # extreu la key principal del json (la part anterior al signe ":")
    keyOrigen=${keyOrigen//\"}                # elimina les cometes
-   local transKey=$(cercaTaulaEquiv $keyOrigen)   # key principal transformada en la seva equivalent
+   local transKey=$(cercaEquiv $keyOrigen)   # key principal transformada en la seva equivalent
 
    if [[ "$transKey" == "" ]]; then
-      echo # no s'ha d'incloure aquest element
+      # no s'ha d'incloure aquest element
    elif [[ "$keyOrigen" == "$transKey" ]]; then
       #incorpora l'element sense canvis al jsonFinal
       jsonFinal+="${json},"   #afegeix coma de separació del següent element
    else
-      local jArray elem jElem e k v i parcial
+      local arrTrans jArray elem jElem e k v i parcial
       local novaKV="\"${transKey}\":\"["
+
+      eval "arrTrans=\$(echo" \${$transKey[@]} ")" #captura l'estructura de l'array indicat a 'transKey'
+      read -r -a arrTrans <<< "$arrTrans"          #crea un array fent split amb el caracter " "
 
       local valueOrigen=${json#*:}            #extreu el valor (la part posterior al primer signe ":")
       valueOrigen=${valueOrigen//[\[\]]}      #elimina tots els claudàtors
@@ -163,14 +192,12 @@ function processaJsonParcial() {
             k=${e//:*}         #key original de la parella
             k=${k//\\\"}       #elimina totes les barres davant cometes (inicial i final)
             v=${e#*:}          #value de la parella
-            echo -e "\t${CB_YLW}k=${C_NONE}${k} - ${CB_YLW}v=${C_NONE}${v}"
+            echo -e "\t${CB_YLW}k=${C_NONE}${k} -- ${CB_YLW}v=${C_NONE}${v}"
 
-            kt=$(cercaEquiv ${keyOrigen} "${k}")  #transforma la key en la seva correponent a partir de la taula denominada $keyOrigen
-            echo -e "\t${CB_YLW}kt=${C_NONE}${kt}\n"
-
+            echo -e "\t\tarrTrans -- ${CB_YLW}arrTrans[${i}]=${C_NONE}${arrTrans[${i}]}"
             #afegeix el valor -per posició a l'array- a la key transformada (sempre i quan existeixi)
-            if [[ "${kt}]" != "" ]]; then
-               parcial+="\\\"${kt}\\\":${v},"
+            if [[ "arrTrans[${i}]" != "" ]]; then
+               parcial+="\\\"${arrTrans[${i}]}\\\":${v},"
             fi
             (( i++ ))
          done
@@ -232,12 +259,12 @@ echo -e "|  Importació de dades des d'un projecte PT LOE a un projecte PT LOE24
 echo -e "+------------------------------------------------------------------------+${C_NONE}"
 
 processarArxiuDades
-#echo -e "${CB_YLW}dadesJson${C_NONE}\n${dadesJson}\n"
-echo -e "${CB_YLW}arrayOrigen${C_NONE}"
-for e in "${arrayOrigen[@]}"; do
-   echo -e "\t$e"
-done
-echo
+   #echo -e "${CB_YLW}dadesJson${C_NONE}\n${dadesJson}\n"
+   echo -e "${CB_YLW}arrayOrigen${C_NONE}"
+   for e in "${arrayOrigen[@]}"; do
+      echo -e "\t$e"
+   done
+   echo
 
 # processa l'array
 proces $arrayOrigen

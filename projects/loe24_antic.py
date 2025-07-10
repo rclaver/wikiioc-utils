@@ -8,15 +8,62 @@ Created on Fri Jul  4 20:31:39 2025
 
 import json, re, os
 
-arxiuMdpr = "~/projectes/wiki18/data/mdprojects/docs/loe_1/ptfploe/meta.mdpr"
-jsonFinal = '{"main":{'
-
 # Taula de equivalències ("original LOE": "destí LOE24")
 taulaEquiv = {
+    "nsProgramacio": "nsProgramacio",
+    "nouCurr": "nouCurr",
+    "pesPAFnouCurr": "pesPAFnouCurr",
+    "semestre": "semestre",
+    "tipusBlocModul": "tipusBlocModul",
+    "cicle": "cicle",
+    "modulId": "modulId",
+    "modul": "modul",
+    "durada": "durada",
+    "duradaCicle": "duradaCicle",
+    "professors": "professors",
+    "coordinador": "coordinador",
+    "urlMaterialDidactic": "urlMaterialDidactic",
+    "dedicacio": "dedicacio",
+    "requerimentsMatricula": "requerimentsMatricula",
+    "descripcio": "descripcio",
+    "itinerarisRecomanats": "itinerarisRecomanats",
     "taulaDadesUF": "taulaDadesUn",
     "taulaDadesUnitats": "taulaUnitatRAs",
+    "einesAprenentatge": "einesAprenentatge",
+    "resultatsAprenentatge": "resultatsAprenentatge",
+    "activitatsAprenentatge": "activitatsAprenentatge",
+    "avaluacioInicial": "avaluacioInicial",
+    "calendari": "calendari",
+    "datesAC": "datesAC",
+    "hiHaSolucioPerAC": "hiHaSolucioPerAC",
+    "datesEAF": "datesEAF",
+    "treballEquipEAF": "treballEquipEAF",
+    "hiHaSolucioPerEAF": "hiHaSolucioPerEAF",
+    "hiHaEnunciatRecuperacioPerEAF": "hiHaEnunciatRecuperacioPerEAF",
+    "hiHaRecuperacioPerJT": "hiHaRecuperacioPerJT",
+    "datesJT": "datesJT",
+    "notaMinimaAC": "notaMinimaAC",
+    "notaMinimaEAF": "notaMinimaEAF",
+    "notaMinimaJT": "notaMinimaJT",
+    "dataPaf11": "dataPaf11",
+    "dataPaf12": "dataPaf12",
+    "dataPaf21": "dataPaf21",
+    "dataPaf22": "dataPaf22",
+    "dataQualificacioPaf1": "dataQualificacioPaf1",
+    "dataQualificacioPaf2": "dataQualificacioPaf2",
+    "notaMinimaPAF": "notaMinimaPAF",
     "dadesQualificacioUFs": "dadesQualificacioUns",
+    "duradaPAF": "duradaPAF",
+    "dadesExtres": "dadesExtres",
+    "plantilla": "plantilla",
+    "autor": "autor",
+    "responsable": "responsable",
+    "supervisor": "supervisor",
+    "fitxercontinguts": "fitxercontinguts",
+    "moodleCourseId": "moodleCourseId",
+    "dataFromMix": "dataFromMix"
 }
+# canvi de nom
 taulaDadesUF = {
    "bloc": "bloc",
    "unitat formativa": "unitat",
@@ -40,32 +87,17 @@ dadesQualificacioUFs = {
 }
 
 """
-Llegeix l'arxiu mdpr i retorna una estructura json
+Llegeix l'arxiu mdpr i crea un json a 'dadesJson'
 """
-def carregaArxiuMdpr(arxiu):
+def processarArxiuDades(arxiu):
+   global dadesJson
    if (os.path.exists(arxiu)):
       contingut = open(arxiu).read()
       dadesJson = json.loads(contingut)
-      return dadesJson
+      return True
    else:
       print("Arxiu no trobat")
       return False
-
-"""
-Verifica si el valor donat és un json
-"""
-def isJson(data):
-   try:
-      json.loads(data)
-   except (ValueError, TypeError):
-      return False
-   return True
-
-"""
-Verifica si existeix la variable donada
-"""
-def existeix(var):
-   return eval(var) if var in globals() else None
 
 """
  Cerca a la Taula d'equivalències 'taulaEquiv' la parella que conté
@@ -73,7 +105,7 @@ def existeix(var):
 """
 def cercaEquiv(origen):
    desti = taulaEquiv[origen]
-   return desti if desti else origen
+   return desti
 
 """
  Afegeix un nou element a la cadena de sortida 'jsonFinal' prèvia transformació de l'origen en destí
@@ -95,23 +127,16 @@ def processaJsonParcial(cadenaComp):
    else:
       print("encara no sé")
 
+
 """
- Procés principal: tractament de tots els elements de "dadesJson"
+ Procés principal: tractament de tots els elements de l'arrayOrigen
 """
-def proces(key, value):
+def proces():
+   global dadesJson
    iComp = 0  #indicador de 'valor' compost (conté sub-elements json)
    claud = 0  #indicador de nivell de sub-element json (nombre de claudàtors oberts)
 
-   keyTrans = cercaEquiv(key)
-   if (key == keyTrans):
-      #no hi ha canvi de clau
-      if (value == "[]" or not isJson(value)):
-         #el valor és una cadena, importació directa
-         return {key, value}
-      else:
-         print("fer coses")
-
-   else:
+   for key, value in dadesJson:
       if (iComp == 0):
          # la part 'valor' és una cadena simple sense sub-elements json
          if (value == '"[]"'):
@@ -134,19 +159,13 @@ def proces(key, value):
                processaJsonParcial(cadenaComp)
                iComp = 0
 
-"""
- Procés principal: tractament de les claus principals de "dadesJson"
-"""
-def principal(dadesJson):
-   for key, value in dadesJson.items():
-      part = proces(key, value)
-      jsonFinal[part.key] = part.value
-   return jsonFinal
 
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 print("Importació de dades d'un pla de treball LOE a un nou pla de treball LOE24")
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
-dadesJson = carregaArxiuMdpr(arxiuMdpr)
-if (dadesJson):
-   principal(dadesJson)
+arxiuMdpr = "~/projectes/wiki18/data/mdprojects/docs/loe_1/ptfploe/meta.mdpr"
+jsonFinal = '{"main":{'
+
+if processarArxiuDades(arxiuMdpr):
+   proces()

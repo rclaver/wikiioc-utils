@@ -1,0 +1,8 @@
+~*
+*.*~
+.htaccess
+.env
+*.pyc
+.venv
+.spyproject
+__pycache__/

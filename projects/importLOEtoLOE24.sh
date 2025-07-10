@@ -57,7 +57,7 @@ function processarArxiuDades() {
 #
 function getValue() {
    local key=${1//\"}   #elimina totes les cometes '"'
-   echo ${key##*:}      # extreu la part posterior a l'últim signe ":"
+   echo ${key#*:}       # extreu la part posterior al primer signe ":"
 }
 
 #
@@ -70,7 +70,7 @@ function cercaTaulaEquiv() {
    local desti=$origen
    for e in "${taulaEquiv[@]}"; do
       if [[ "${e}" =~ "${origen}:" ]]; then
-         desti=${e##*:}  #extreu la part posterior a l'últim signe ":"
+         desti=${e#*:}  #extreu la part posterior al primer signe ":"
          break
       fi
    done
@@ -92,11 +92,11 @@ function cercaEquiv() {
    for e in "${taula[@]}"; do
       e=${e/@/ }   #subtitueix el caracter @ per espai
       if [[ "${e}" =~ "${korigen}:" ]]; then
-         desti=${e##*:}  #extreu la part posterior a l'últim signe ":"
+         desti=${e#*:}  #extreu la part posterior al primer signe ":"
          break
       fi
    done
-   echo $desti
+   echo ${desti//\"}  #elimina les cometes
 }
 
 #
@@ -105,7 +105,7 @@ function cercaEquiv() {
 function processaJsonFinal() {
    local cadena="$1"
    local e1=${cadena//:*}  # extreu la part anterior al signe ":"
-   local e2=${cadena##*:}  # extreu la part posterior a l'últim signe ":"
+   local e2=${cadena#*:}   # extreu la part posterior al primer signe ":"
    local trans=$(cercaTaulaEquiv $e1)
    jsonFinal+="\"$trans\"":"$e2",
 }
@@ -192,7 +192,7 @@ function proces() {
    local claud=0  #indicador de nivell de sub-element json (nombre de claudàtors oberts)
 
    for e in "${arrayOrigen[@]}"; do
-      valor=${e##*:}  # extreu la part posterior al signe ":"
+      valor=${e#*:}  # extreu la part posterior al primer signe ":"
       # la part 'valor' és una cadena simple sense sub-elements json
       if [[ $iComp == 0 ]]; then
          if [[ $valor == '"[]"' ]]; then

@@ -9,7 +9,6 @@ Created on Fri Jul  4 20:31:39 2025
 import json, os
 
 arxiuMdpr = "/home/rafael/Escritorio/meta.mdpr"
-jmain = {}
 
 # Taula de equivalències ("original LOE": "destí LOE24")
 taulaEquiv = {
@@ -45,8 +44,7 @@ Llegeix l'arxiu mdpr i retorna una estructura json
 def carregaArxiuMdpr(arxiu):
    if (os.path.exists(arxiu)):
       contingut = open(arxiu).read()
-      dadesJson = json.loads(contingut)
-      return dadesJson
+      return json.loads(contingut)
    else:
       print("Arxiu no trobat")
       return False
@@ -57,7 +55,7 @@ Verifica si el valor donat és un json
 def isJson(data):
    if (isinstance(data, dict)):
       return True
-   elif (data.isnumeric()):
+   elif (isinstance(data, int) or data.isnumeric()):
       return False
    else:
       try:
@@ -76,12 +74,13 @@ def existeix(var):
 Transforma una List en un Dict
 """
 def transListToDict(value):
-   value = json.loads(value)
-   if (isinstance(value, list)):
-      d = {}
-      for i in value:
-         d.update(i)
-      value = d
+   if (value or len(value) > 0 or value != None):
+      value = json.loads(value)
+      if (isinstance(value, list)):
+         d = {}
+         for i in value:
+            d.update(i)
+         value = d
    return value
 
 """
@@ -104,20 +103,26 @@ def cercaEquiv(taula, origen):
  Procés principal
 """
 def process(dades, arrayTrans=None):
-   global jmain
+   parcial = {}
+
    for key, value in dades.items():
       if (not arrayTrans):
          arrayTrans = existeix(key)
-      keyTrans = cercaEquiv(arrayTrans, key) if (arrayTrans) else cercaTaulaEquiv(key)
-      parcial = {}
+         keyTrans = cercaTaulaEquiv(key)
+      else:
+         keyTrans = cercaEquiv(arrayTrans, key)
 
       if (not isJson(value)):
-         # afegeix un nou element al json final
-         jmain[keyTrans] = value
+         # afegeix un nou element al json
+         parcial[keyTrans] = value
       else:
-         if (not isinstance(value, dict)):
-            value = transListToDict(value)
-         parcial[keyTrans] = process(value, arrayTrans)
+         if (not value or len(value) == 0 or value == None):
+            parcial[keyTrans] = value
+         else:
+            if (not isinstance(value, dict)):
+               value = transListToDict(value)
+            parcial[keyTrans] = process(value, arrayTrans)
+
 
    return parcial
 
@@ -127,6 +132,6 @@ print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 dadesJson = carregaArxiuMdpr(arxiuMdpr)
 if (dadesJson):
-   process(dadesJson)
+   jmain = process(dadesJson)
    jsonFinal = {"main": jmain}
    print(jsonFinal)

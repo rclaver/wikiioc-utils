@@ -9,11 +9,18 @@ Created on Thu Jul 10 11:08:02 2025
 import json
 
 def isJson(value):
-    try:
-        json.loads(value)
-    except (ValueError, TypeError):
-        return "json error"
-    return "json_object"
+   if (isinstance(value, dict)):
+      return "json_object"
+   elif (isinstance(value, int)):
+      return "json error"
+   elif (value.isnumeric()):
+      return "json error"
+   else:
+      try:
+         json.loads(value)
+      except (ValueError, TypeError):
+         return "json error"
+      return "json_object"
 
 def isDict(value):
    return "És dict" if type(value) is dict  else "NO és dict"

@@ -18,14 +18,17 @@ def isJson(value):
 def isDict(value):
    return "És dict" if type(value) is dict  else "NO és dict"
 
-dada = "texto compuesto"
+dada = "22222222222"
 print("valor: string \"", dada, "\":", isJson(dada), isDict(dada))
 
-dada = '[""]'
+dada = "texto"
+print("valor: string \"", dada, "\":", isJson(dada), isDict(dada))
+
+dada = "[]"
 print("valor: array buit", dada, ":", isJson(dada), isDict(json.loads(dada)))
 
 dada = "[{\"m\\u00f2dul\":\"--\",\"itinerariRecomanatS1\":\"1\",\"itinerariRecomanatS2\":\"1\"}]"
 print("valor: array [....]:", isJson(dada), isDict(json.loads(dada)))
 
-dada = "{\"bloc\":\"2\",\"unitat formativa\":\"2\",\"nom\":\"Disseny modular\",\"hores\":50,\"ponderaci\\u00f3\":50,\"ordreImparticio\":2}"
+dada = "{\"bloc\":\"2\",\"unitat formativa\":\"2\",\"nom\":\"Disseny modular\",\"hores\":50,\"ponderacio\":50,\"ordreImparticio\":2}"
 print("valor: json {...}:", isJson(dada), isDict(json.loads(dada)))

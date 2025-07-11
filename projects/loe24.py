@@ -6,10 +6,10 @@ Created on Fri Jul  4 20:31:39 2025
 @description: Importació de dades d'un pla de treball LOE a un nou pla de treball LOE24
 """
 
-import json, re, os
+import json, os
 
-arxiuMdpr = "~/projectes/wiki18/data/mdprojects/docs/loe_1/ptfploe/meta.mdpr"
-jsonFinal = '{"main":{'
+arxiuMdpr = "/home/rafael/Escritorio/meta.mdpr"
+jmain = {}
 
 # Taula de equivalències ("original LOE": "destí LOE24")
 taulaEquiv = {
@@ -55,11 +55,16 @@ def carregaArxiuMdpr(arxiu):
 Verifica si el valor donat és un json
 """
 def isJson(data):
-   try:
-      json.loads(data)
-   except (ValueError, TypeError):
+   if (isinstance(data, dict)):
+      return True
+   elif (data.isnumeric()):
       return False
-   return True
+   else:
+      try:
+         json.loads(data)
+      except (ValueError, TypeError):
+         return False
+      return True
 
 """
 Verifica si existeix la variable donada
@@ -68,80 +73,53 @@ def existeix(var):
    return eval(var) if var in globals() else None
 
 """
- Cerca a la Taula d'equivalències 'taulaEquiv' la parella que conté
- la clau origen sol·licitada i retorna la parella associada
+Transforma una List en un Dict
 """
-def cercaEquiv(origen):
-   desti = taulaEquiv[origen]
+def transListToDict(value):
+   value = json.loads(value)
+   if (isinstance(value, list)):
+      d = {}
+      for i in value:
+         d.update(i)
+      value = d
+   return value
+
+"""
+ Cerca a la Taula d'equivalències 'taulaEquiv' la parella que conté
+ la clau origen i retorna la parella associada
+"""
+def cercaTaulaEquiv(origen):
+   desti = taulaEquiv.get(origen)
    return desti if desti else origen
 
 """
- Afegeix un nou element a la cadena de sortida 'jsonFinal' prèvia transformació de l'origen en destí
+ Cerca a la taula d'equivalències indicada la parella que conté
+ la clau origen i retorna la parella associada
 """
-def processaJsonFinal(key, value):
-   global jsonFinal
-   trans = cercaEquiv(key)
-   jsonFinal += '"' + trans + '":' + value + ','
-
-
-def processaJsonParcial(cadenaComp):
-   global jsonFinal
-   jstring = json.loads(cadenaComp)
-   keyOrigen = cadenaComp.keys()
-   transKey = cercaEquiv(keyOrigen)
-   if (keyOrigen == transKey):
-      #incorpora l'element sense canvis al jsonFinal
-      jsonFinal += jstring + ","   #afegeix coma de separació del següent element
-   else:
-      print("encara no sé")
+def cercaEquiv(taula, origen):
+   desti = taula.get(origen)
+   return desti
 
 """
- Procés principal: tractament de tots els elements de "dadesJson"
+ Procés principal
 """
-def proces(key, value):
-   iComp = 0  #indicador de 'valor' compost (conté sub-elements json)
-   claud = 0  #indicador de nivell de sub-element json (nombre de claudàtors oberts)
+def process(dades, arrayTrans=None):
+   global jmain
+   for key, value in dades.items():
+      if (not arrayTrans):
+         arrayTrans = existeix(key)
+      keyTrans = cercaEquiv(arrayTrans, key) if (arrayTrans) else cercaTaulaEquiv(key)
+      parcial = {}
 
-   keyTrans = cercaEquiv(key)
-   if (key == keyTrans):
-      #no hi ha canvi de clau
-      if (value == "[]" or not isJson(value)):
-         #el valor és una cadena, importació directa
-         return {key, value}
+      if (not isJson(value)):
+         # afegeix un nou element al json final
+         jmain[keyTrans] = value
       else:
-         print("fer coses")
+         if (not isinstance(value, dict)):
+            value = transListToDict(value)
+         parcial[keyTrans] = process(value, arrayTrans)
 
-   else:
-      if (iComp == 0):
-         # la part 'valor' és una cadena simple sense sub-elements json
-         if (value == '"[]"'):
-            processaJsonFinal(key, value)
-         elif (value[0] != "["):
-            processaJsonFinal(key, value)
-         else:
-            iComp = 1
-            claud+= 1
-            cadenaComp = "${e},"
-      else:
-         #la part 'valor' és part d'una cadena composta (conté sub-elements json)
-         cadenaComp += "${e},"
-         if (value[0] == "["):
-            claud += 1
-         elif (value[-1] == "]"):
-            claud -= 1
-            if (claud == 0):
-               cadenaComp = cadenaComp[:-1]   #elimina la coma final
-               processaJsonParcial(cadenaComp)
-               iComp = 0
-
-"""
- Procés principal: tractament de les claus principals de "dadesJson"
-"""
-def principal(dadesJson):
-   for key, value in dadesJson.items():
-      part = proces(key, value)
-      jsonFinal[part.key] = part.value
-   return jsonFinal
+   return parcial
 
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 print("Importació de dades d'un pla de treball LOE a un nou pla de treball LOE24")
@@ -149,4 +127,6 @@ print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 dadesJson = carregaArxiuMdpr(arxiuMdpr)
 if (dadesJson):
-   principal(dadesJson)
+   process(dadesJson)
+   jsonFinal = {"main": jmain}
+   print(jsonFinal)

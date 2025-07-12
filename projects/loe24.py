@@ -8,7 +8,8 @@ Created on Fri Jul  4 20:31:39 2025
 
 import json, os
 
-arxiuMdpr = "/home/rafael/Escritorio/meta.mdpr"
+arxiuMdprLOE = "/home/rafael/Escritorio/meta.mdpr"
+arxiuMdprLOE24 = "/home/rafael/Escritorio/meta24.mdpr"
 
 # Taula de equivalències ("original LOE": "destí LOE24")
 taulaEquiv = {
@@ -22,6 +23,7 @@ taulaDadesUF = {
    "nom": "nom",
    "ordreImparticio": "ordreImparticio",
    "hores": "hores",
+   "ponderació": "ponderació",
    "ponderaci\\u00f3": "ponderaci\\u00f3"
 }
 taulaDadesUnitats = {
@@ -35,13 +37,14 @@ dadesQualificacioUFs = {
    "tipus qualificació": "tipus qualificació",
    "descripció qualificació": "descripció qualificació",
    "abreviació qualificació": "abreviació qualificació",
+   "ponderació": "ponderació",
    "ponderaci\\u00f3": "ponderaci\\u00f3"
 }
 
 """
 Llegeix l'arxiu mdpr i retorna una estructura json
 """
-def carregaArxiuMdpr(arxiu):
+def carregaArxiuMdprLOE(arxiu):
    if (os.path.exists(arxiu)):
       contingut = open(arxiu).read()
       return json.loads(contingut)
@@ -57,6 +60,8 @@ def isJson(data):
       return True
    elif (isinstance(data, int) or data.isnumeric()):
       return False
+   elif (data == "false" or data == "False" or data == "true" or data == "True"):
+      return False
    else:
       try:
          json.loads(data)
@@ -65,7 +70,7 @@ def isJson(data):
       return True
 
 """
-Verifica si existeix la variable donada
+Verifica si existeix la variable donada. Si existeix retorna aquesta variable
 """
 def existeix(var):
    return eval(var) if var in globals() else None
@@ -107,22 +112,22 @@ def process(dades, arrayTrans=None):
 
    for key, value in dades.items():
       if (not arrayTrans):
+         #si existeix, obté la taula d'equivalències indicada a 'key'
          arrayTrans = existeix(key)
          keyTrans = cercaTaulaEquiv(key)
       else:
          keyTrans = cercaEquiv(arrayTrans, key)
 
       if (not isJson(value)):
-         # afegeix un nou element al json
          parcial[keyTrans] = value
       else:
-         if (not value or len(value) == 0 or value == None):
+         if (not value or len(value) == 0 or value == None or value == "[]" ):
             parcial[keyTrans] = value
          else:
             if (not isinstance(value, dict)):
                value = transListToDict(value)
             parcial[keyTrans] = process(value, arrayTrans)
-
+         arrayTrans = None
 
    return parcial
 
@@ -130,8 +135,9 @@ print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 print("Importació de dades d'un pla de treball LOE a un nou pla de treball LOE24")
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
-dadesJson = carregaArxiuMdpr(arxiuMdpr)
+dadesJson = carregaArxiuMdprLOE(arxiuMdprLOE)
 if (dadesJson):
-   jmain = process(dadesJson)
-   jsonFinal = {"main": jmain}
+   jsonFinal = process(dadesJson)
    print(jsonFinal)
+   with open(arxiuMdprLOE24, "w") as f:
+      f.write(str(jsonFinal))

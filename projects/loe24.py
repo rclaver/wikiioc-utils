@@ -79,13 +79,12 @@ def existeix(var):
 Transforma una List en un Dict
 """
 def transListToDict(value):
-   if (value or len(value) > 0 or value != None):
-      value = json.loads(value)
-      if (isinstance(value, list)):
-         d = {}
-         for i in value:
-            d.update(i)
-         value = d
+   value = json.loads(value)
+   if (isinstance(value, list)):
+      d = {}
+      for i in value:
+         d.update(i)
+      value = d
    return value
 
 """

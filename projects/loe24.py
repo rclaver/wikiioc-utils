@@ -76,15 +76,10 @@ def existeix(var):
    return eval(var) if var in globals() else None
 
 """
-Transforma una List en un Dict
+Transforma un String en List
 """
-def transListToDict(value):
+def transStringToList(value):
    value = json.loads(value)
-   if (isinstance(value, list)):
-      d = {}
-      for i in value:
-         d.update(i)
-      value = d
    return value
 
 """
@@ -124,8 +119,17 @@ def process(dades, arrayTrans=None):
             parcial[keyTrans] = value
          else:
             if (not isinstance(value, dict)):
-               value = transListToDict(value)
-            parcial[keyTrans] = process(value, arrayTrans)
+               value = transStringToList(value)
+               print(type(value), value)
+               p = "["
+               for e in value:
+                  print(e)
+                  p += json.dumps(process(e, arrayTrans)) + ","
+               p += "]"
+               print(type(p), p)
+               parcial[keyTrans] = json.dumps(p)
+            else:
+               parcial[keyTrans] = process(value, arrayTrans)
          arrayTrans = None
 
    return parcial

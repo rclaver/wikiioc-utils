@@ -36,7 +36,6 @@ CB_YLW="\033[1;33m"
 
 llistaArxius="llistaPTLOE.txt"
 declare -a arrayOrigen
-jsonFinal="{\"main\":{"
 
 function obteLlistaArxius() {
    if [ -f $llistaArxius ]; then
@@ -60,9 +59,8 @@ function llegeixArxiu() {
 		dades=${contingut##\{\"main\":\{}  	#elimina, des del principi, la part major que coincideixi amb el patró
 		dades=${dades%\}\}}            		#elimina, des del final, la part menor que coincideixi amb el patró
 		IFS=',' read -r -a arrayOrigen <<< "$dades"    #obté un array fent split amb el caracter ","
-		echo -e ${arrayOrigen[@]}
 	else
-		echo "Arxiu ${arxiu}, no trobat"
+		estat="Arxiu ${arxiu}, no trobat"
    fi
 }
 
@@ -256,7 +254,7 @@ for parella in $llista; do
 	echo -e "f_origen: ${f_origen}"
 	echo -e "f_desti : ${f_desti}\n"
 
-	estat=$(llegeixArxiu $f_origen)
+	llegeixArxiu $f_origen
 	if [ "$estat" = "" ]; then
 		echo -e "${CB_YLW}arrayOrigen${C_NONE}"
 		for e in "${arrayOrigen[@]}"; do
@@ -264,25 +262,24 @@ for parella in $llista; do
 		done
 		echo
 
+		jsonFinal="{\"main\":{"
 		# processa l'array
 		proces $arrayOrigen
 	else
 		echo -e "${estat}"
-		echo -e "${CB_YLW}arrayOrigen${C_NONE}"
-		for elem in "${arrayOrigen[@]}"; do
-			echo -e "\t$elem"
-		done
-		echo -e "\n\n"
 	fi
+
+	echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+	echo -e "RESULTAT ${f_desti}"
+	echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+	jsonFinal=${jsonFinal%,}   #elimina la coma final
+	jsonFinal+="}}"
+	echo -e "${CB_YLW}--- jsonFinal ---${C_NONE}\n$jsonFinal"
+	echo $jsonFinal > $f_desti
+
 done
 
 
-echo "~~~~~~~~"
-echo "RESULTAT"
-echo "~~~~~~~~"
-jsonFinal=${jsonFinal%,}   #elimina la coma final
-jsonFinal+="}}"
-echo -e "${CB_YLW}--- jsonFinal ---${C_NONE}\n$jsonFinal"
 
 echo "------------------------------"
 #read -p "Procès finalitzat. Prem Retorn"

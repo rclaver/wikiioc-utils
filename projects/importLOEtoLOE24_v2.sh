@@ -256,30 +256,26 @@ for parella in $llista; do
 
 	llegeixArxiu $f_origen
 	if [ "$estat" = "" ]; then
-		echo -e "${CB_YLW}arrayOrigen${C_NONE}"
-		for e in "${arrayOrigen[@]}"; do
-			echo -e "\t$e"
-		done
-		echo
+		#echo -e "${CB_YLW}arrayOrigen${C_NONE}"
+		#for e in "${arrayOrigen[@]}"; do echo -e "\t$e"; done
+		#echo
 
 		jsonFinal="{\"main\":{"
 		# processa l'array
 		proces $arrayOrigen
+
+		echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+		echo -e "RESULTAT per a ${f_desti}"
+		echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+		jsonFinal=${jsonFinal%,}   #elimina la coma final
+		jsonFinal+="}}"
+		echo $jsonFinal > $f_desti
+		echo -e "${CB_YLW}--- jsonFinal ---${C_NONE}\n$jsonFinal\n\n"
 	else
 		echo -e "${estat}"
 	fi
 
-	echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-	echo -e "RESULTAT ${f_desti}"
-	echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-	jsonFinal=${jsonFinal%,}   #elimina la coma final
-	jsonFinal+="}}"
-	echo -e "${CB_YLW}--- jsonFinal ---${C_NONE}\n$jsonFinal"
-	echo $jsonFinal > $f_desti
-
 done
-
-
 
 echo "------------------------------"
 #read -p "Procès finalitzat. Prem Retorn"

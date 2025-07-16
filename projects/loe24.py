@@ -8,8 +8,9 @@ Created on Fri Jul  4 20:31:39 2025
 
 import json, os
 
-arxiuMdprLOE = "/home/rafael/Escritorio/meta.mdpr"
-arxiuMdprLOE24 = "/home/rafael/Escritorio/meta24.mdpr"
+llistaArxius = "llistaPTLOE.txt"
+#arxiuMdprLOE = "/home/rafael/Escritorio/meta.mdpr"
+#arxiuMdprLOE24 = "/home/rafael/Escritorio/meta24.mdpr"
 
 # Taula de equivalències ("original LOE": "destí LOE24")
 taulaEquiv = {
@@ -40,6 +41,16 @@ dadesQualificacioUFs = {
    "ponderació": "ponderació",
    "ponderaci\\u00f3": "ponderaci\\u00f3"
 }
+
+def obteLlistaArxius():
+   global llistaArxius
+   if (os.path.exists(llistaArxius)):
+      llista = open(llistaArxius).read()
+      return json.loads(llista)
+   else:
+      print("No he trobar el fitxer \'${llistaArxius}\' que conté la llista d'arxius")
+      return False
+
 
 """
 Llegeix l'arxiu mdpr i retorna una estructura json
@@ -74,6 +85,26 @@ Verifica si existeix la variable donada. Si existeix retorna aquesta variable
 """
 def existeix(var):
    return eval(var) if var in globals() else None
+
+"""
+Transforma ' en " y elimina espais
+"""
+def maqueado(value):
+   # elimina espais
+   value = value.replace(": ", ":")
+   value = value.replace(", ", ",")
+   # canvia cometes simples per dobles
+   value = value.replace("{'", "{\"")
+   value = value.replace("'}", "\"}")
+   value = value.replace("':'", "\":\"")
+   value = value.replace("','", "\",\"")
+   value = value.replace("':", "\":")
+   # elimina caracters duplicats
+   value = value.replace("\\\\\"", "\\\"")
+   value = value.replace("\\\\\\\\", "\\\\")
+   value = value.replace("\"\"[", "\"[")
+   value = value.replace("]\"\"", "]\"")
+   return value
 
 """
 Transforma un String en List
@@ -134,13 +165,29 @@ def process(dades, arrayTrans=None):
 
    return parcial
 
+"""
+bucle principal per a tots els arxius consignats a la llista d'arxius
+"""
+def inici():
+   llista = obteLlistaArxius()
+   if (llista):
+      for key in llista:
+         dades = carregaArxiuMdprLOE(key)
+         if (dades):
+            trans = process(dades)
+            trans = maqueado(str(trans))
+            with open(llista[key], "w") as f:
+               f.write(trans)
+
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 print("Importació de dades d'un pla de treball LOE a un nou pla de treball LOE24")
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
-dadesJson = carregaArxiuMdprLOE(arxiuMdprLOE)
-if (dadesJson):
-   jsonFinal = process(dadesJson)
-   print(jsonFinal)
-   with open(arxiuMdprLOE24, "w") as f:
-      f.write(str(jsonFinal))
+inici()
+
+#dadesJson = carregaArxiuMdprLOE(arxiuMdprLOE)
+#if (dadesJson):
+#   jsonFinal = process(dadesJson)
+#   print(jsonFinal)
+#   with open(arxiuMdprLOE24, "w") as f:
+#      f.write(str(jsonFinal))

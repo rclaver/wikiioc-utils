@@ -1,0 +1,4 @@
+{
+"/home/rafael/Escritorio/meta.mdpr":"/home/rafael/Escritorio/meta24.mdpr",
+"meta.mdpr":"meta24.mdpr"
+}

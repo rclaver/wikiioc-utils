@@ -9,8 +9,6 @@ Created on Fri Jul  4 20:31:39 2025
 import json, os
 
 llistaArxius = "llistaPTLOE.txt"
-#arxiuMdprLOE = "/home/rafael/Escritorio/meta.mdpr"
-#arxiuMdprLOE24 = "/home/rafael/Escritorio/meta24.mdpr"
 
 # Taula de equivalències ("original LOE": "destí LOE24")
 taulaEquiv = {
@@ -98,12 +96,15 @@ def maqueado(value):
    value = value.replace("'}", "\"}")
    value = value.replace("':'", "\":\"")
    value = value.replace("','", "\",\"")
+   value = value.replace(",'", ",\"")
    value = value.replace("':", "\":")
    # elimina caracters duplicats
    value = value.replace("\\\\\"", "\\\"")
    value = value.replace("\\\\\\\\", "\\\\")
    value = value.replace("\"\"[", "\"[")
    value = value.replace("]\"\"", "]\"")
+   # elimina coma final del conjunt d'elements
+   value = value.replace("},]", "}]")
    return value
 
 """
@@ -151,13 +152,10 @@ def process(dades, arrayTrans=None):
          else:
             if (not isinstance(value, dict)):
                value = transStringToList(value)
-               print(type(value), value)
                p = "["
                for e in value:
-                  print(e)
                   p += json.dumps(process(e, arrayTrans)) + ","
                p += "]"
-               print(type(p), p)
                parcial[keyTrans] = json.dumps(p)
             else:
                parcial[keyTrans] = process(value, arrayTrans)
@@ -184,10 +182,3 @@ print("Importació de dades d'un pla de treball LOE a un nou pla de treball LOE2
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 inici()
-
-#dadesJson = carregaArxiuMdprLOE(arxiuMdprLOE)
-#if (dadesJson):
-#   jsonFinal = process(dadesJson)
-#   print(jsonFinal)
-#   with open(arxiuMdprLOE24, "w") as f:
-#      f.write(str(jsonFinal))

@@ -249,8 +249,8 @@ llista=$(obteLlistaArxius $llistaArxius)
 for parella in $llista; do
    parella=${parella//\"}   #elimina cometes
    f_origen=${parella/:*}   #part anterior a :
-   f_desti=${parella#*:}   #part posterior a :
-   f_desti=${f_desti%,}      #elimina la coma final
+   f_desti=${parella#*:}    #part posterior a :
+   f_desti=${f_desti%,}     #elimina la coma final
    echo -e "f_origen: ${f_origen}"
    echo -e "f_desti : ${f_desti}\n"
 

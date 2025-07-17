@@ -31,24 +31,37 @@ dadesQualificacioUFs=('unitat@formativa:unitat'
 #
 # Variables globals
 LANG=C.UTF-8
-
 C_NONE="\033[0m"
 CB_YLW="\033[1;33m"
 
+llistaArxius="llistaPTLOE.txt"
 declare -a arrayOrigen
-jsonFinal="{\"main\":{"
+
+function obteLlistaArxius() {
+   if [ -f $llistaArxius ]; then
+      llista=$(cat $llistaArxius)
+      llista=${llista#\{}   #elimina, des del principi, la part que coincideixi amb el patró
+      llista=${llista%\}}   #elimina, des del final, la part menor que coincideixi amb el patró
+      echo $llista
+   else
+      echo -e "No he trobar el fitxer \'${llistaArxius}\' que conté la llista d'arxius"
+   fi
+}
 
 #
 # llegeix l'arxiu mdpr, fragmenta la cadena json obtinguda truncant amb ","
 # i guarda els elements en format array a 'arrayOrigen'
 #
-function processarArxiuDades() {
-   #local arxiuJson=~/projectes/wiki18/data/mdprojects/docs/loe_1/ptfploe/meta.mdpr
-   local arxiuJson=~/Escritorio/meta.mdpr
-   local contingut=$(cat $arxiuJson)
-   dadesJson=${contingut##\{\"main\":\{}  #elimina, des del principi, la part major que coincideixi amb el patró
-   dadesJson=${dadesJson%\}\}}            #elimina, des del final, la part menor que coincideixi amb el patró
-   IFS=',' read -r -a arrayOrigen <<< "$dadesJson"    #obté un array fent split amb el caracter ","
+function llegeixArxiu() {
+   local arxiu=$1
+   if [ -f $arxiu ]; then
+      local contingut=$(cat $arxiu)
+      dades=${contingut##\{\"main\":\{}    #elimina, des del principi, la part major que coincideixi amb el patró
+      dades=${dades%\}\}}                  #elimina, des del final, la part menor que coincideixi amb el patró
+      IFS=',' read -r -a arrayOrigen <<< "$dades"    #obté un array fent split amb el caracter ","
+   else
+      estat="Arxiu ${arxiu}, no trobat"
+   fi
 }
 
 
@@ -231,23 +244,38 @@ echo -e "${CB_YLW}+-------------------------------------------------------------
 echo -e "|  Importació de dades des d'un projecte PT LOE a un projecte PT LOE24  |"
 echo -e "+------------------------------------------------------------------------+${C_NONE}"
 
-processarArxiuDades
-#echo -e "${CB_YLW}dadesJson${C_NONE}\n${dadesJson}\n"
-echo -e "${CB_YLW}arrayOrigen${C_NONE}"
-for e in "${arrayOrigen[@]}"; do
-   echo -e "\t$e"
+llista=$(obteLlistaArxius $llistaArxius)
+
+for parella in $llista; do
+   parella=${parella//\"}   #elimina cometes
+   f_origen=${parella/:*}   #part anterior a :
+   f_desti=${parella#*:}   #part posterior a :
+   f_desti=${f_desti%,}      #elimina la coma final
+   echo -e "f_origen: ${f_origen}"
+   echo -e "f_desti : ${f_desti}\n"
+
+   llegeixArxiu $f_origen
+   if [ "$estat" = "" ]; then
+      #echo -e "${CB_YLW}arrayOrigen${C_NONE}"
+      #for e in "${arrayOrigen[@]}"; do echo -e "\t$e"; done
+      #echo
+
+      jsonFinal="{\"main\":{"
+      # processa l'array
+      proces $arrayOrigen
+
+      echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+      echo -e "RESULTAT per a ${f_desti}"
+      echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+      jsonFinal=${jsonFinal%,}   #elimina la coma final
+      jsonFinal+="}}"
+      echo $jsonFinal > $f_desti
+      echo -e "${CB_YLW}--- jsonFinal ---${C_NONE}\n$jsonFinal\n\n"
+   else
+      echo -e "${estat}"
+   fi
+
 done
-echo
-
-# processa l'array
-proces $arrayOrigen
-
-echo "~~~~~~~~"
-echo "RESULTAT"
-echo "~~~~~~~~"
-jsonFinal=${jsonFinal%,}   #elimina la coma final
-jsonFinal+="}}"
-echo -e "${CB_YLW}--- jsonFinal ---${C_NONE}\n$jsonFinal"
 
 echo "------------------------------"
 #read -p "Procès finalitzat. Prem Retorn"

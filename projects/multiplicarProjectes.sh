@@ -1,6 +1,7 @@
 #!/bin/bash
 #
-# Multiplicació de projectes a partir d'una plantilla
+# @autor: Rafael Claver
+# @descipció: Multiplicació de projectes a partir d'una plantilla
 #
 
 #
@@ -9,7 +10,9 @@
 #
 function obtenirLlista() {
    llistaProjectes=$1
+   declare -a arrProjectes
    if [ -f $llistaProjectes ]; then
+
       llp=$(cat $llistaProjectes)
       llp=${llp#\{}   #elimina, des del principi, la part que coincideixi amb el patró
       llp=${llp%\}}   #elimina, des del final, la part menor que coincideixi amb el patró
@@ -20,7 +23,7 @@ function obtenirLlista() {
          proj=${proj%,}          #elimina la coma final
          arrProjectes+=($proj)
       done
-      echo $arrProjectes
+      echo ${arrProjectes[@]}
    else
       estat="No he trobar el fitxer \'${llistaProjectes}\' que conté la llista de projectes"
    fi
@@ -37,30 +40,38 @@ llistaDeProjectes="llistaPTLOE.txt"
 base="/home/dokuwiki/wiki18/data"
 
 grups=('mdprojects' 'pages' 'media')
-pt_loe='plans_de_treball'
-pt_loe24='pt_fp_loe24'
-dir_loe='pt_loe24_plantilla'
-prj_loe='ptfploe'
-prj_loe24='ptfploe24'
+prj='ptfploe24'            #tipus de projecte LOE24
+pt='pt_fp_loe24'           #directori dels plans de treball LOE24
+pdir='pt_loe24_plantilla'  #directori de la plantilla LOE24
 
-p_loe="${base}/@GRUP@/documents_fp/plans_de_treball/pt_loe24_plantilla/ptfploe"
-
-p_mdpro="${base}/mdprojects/documents_fp/${pt_loe}/pt_loe24_plantilla/ptfploe"
-p_pages="${base}/pages/documents_fp/${pt_loe}/pt_loe24_plantilla"
-p_media="${base}/media/documents_fp/${pt_loe}/pt_loe24_plantilla"
-mdpro="${base}/mdprojects/documents_fp/${pt_loe24}"
-
-"/home/dokuwiki/wiki18/data/mdprojects/documents_fp/pt_fp_loe24/0373_ICA0B0/ptfploe24/meta.mdpr"
-declare -a arrProjectes
+plantilla="${base}/@GRUP@/documents_fp/${pt}/${pdir}"
 
 llista=$(obtenirLlista $llistaDeProjectes)
-if [[ "$llista" != "" && "$estat" != "" ]]; then
-   for e in $llista; do
-      for g in $grups; do
-         loe=${p_loe/@GRUP@/${g}}
-         if [[ "$g" = "mdprojects" ]]; then loe+="/${prj_loe}"; fi
 
-         cp "${loe}/*" "${mdpro}/${e}/"
+if [[ "$estat" = "" ]]; then
+   echo -e "llista = ${llista}\n"
+
+   for elem in $llista; do
+      elem=${elem%${prj}\/meta.mdpr}   #elimina la part final que inclou el tipus de projecte 'ptfploe24/meta.mdpr'
+
+      for g in ${grups[@]}; do
+         #canvia el directori de grup
+         desti=${elem/mdprojects/${g}}
+         plant=${plantilla/@GRUP@/${g}}
+
+         if [[ "$g" = "mdprojects" ]]; then
+            plant+="/${prj}"  #afegeix el directori de classe de projecte
+         else
+            plant+="/*"       #indica que només s'ha de copiar el contingut del directori'
+         fi
+
+         if [ -f $plant -o -d $plant ]; then
+            echo -e "-plant=${plant}\n-desti=${desti}\n"
+            mkdir -p $desti
+            cp -r $plant $desti
+         fi
       done
    done
+else
+   echo -e "${estat}\n"
 fi

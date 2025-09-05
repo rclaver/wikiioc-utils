@@ -3,11 +3,25 @@
 """
 Created on Fri Jul  4 20:31:39 2025
 @author: rafael
-@description: Importació de dades d'un pla de treball LOE a un nou pla de treball LOE24
+@description: Duplica un pla de treball LOE i transforma les dades en un projecte LOE24
+
+@parameters:
+   - l'arxiu que conté les dades s'ha d'anomenar: "llistaPTLOE.txt"
+   - l'arxiu ha d'estar en format JSON
+   - cada 'key' conté el nom d'un projecte LOE existent que es vol duplicar en una versió LOE24
+   - cada 'value' conté el nou nom pel nou projecte LOE24 que s'ha de generar
+   - exemple: {"pt_asx_m03b1_orig":"pt_asx_m03b1"}
+   - tots els arxius -original LOE i còpia LOE24- s'han de trobar a:
+      "/home/dokuwiki/wiki18/data/[mdprojects|media|pages]/documents_fp/plans_de_treball"
 """
 
 import json, os
 
+dirBase = "/home/dokuwiki/wiki18/data/DATADIR/documents_fp/plans_de_treball"
+arxiuMdpr = "meta.mdpr"
+dataDir = ["mdprojects","media","pages"]
+projLoe = "ptfploe"
+projLoe24 = "ptfploe24"
 llistaArxius = "llistaPTLOE.txt"
 
 # Taula de equivalències ("original LOE": "destí LOE24")
@@ -40,7 +54,7 @@ dadesQualificacioUFs = {
    "ponderaci\\u00f3": "ponderaci\\u00f3"
 }
 
-def obteLlistaArxius():
+def obteLlistaProjectes():
    global llistaArxius
    if (os.path.exists(llistaArxius)):
       llista = open(llistaArxius).read()
@@ -49,6 +63,12 @@ def obteLlistaArxius():
       print("No he trobar el fitxer \'${llistaArxius}\' que conté la llista d'arxius")
       return False
 
+"""
+Duplica el projecte LOE fent veure que la còpia és del tipus LOE24
+"""
+def duplicaProjecte(pLoe, pLoe24):
+   for dd in dataDir:
+      dir = dirBase.replace("DATADIR", dd)
 
 """
 Llegeix l'arxiu mdpr i retorna una estructura json
@@ -167,9 +187,10 @@ def process(dades, arrayTrans=None):
 bucle principal per a tots els arxius consignats a la llista d'arxius
 """
 def inici():
-   llista = obteLlistaArxius()
+   llista = obteLlistaProjectes()
    if (llista):
-      for key in llista:
+      for key, value in llista:
+         duplicaProjecte(key, value)
          dades = carregaArxiuMdprLOE(key)
          if (dades):
             trans = process(dades)

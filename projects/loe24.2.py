@@ -22,6 +22,7 @@ arxiuMdpr = "meta.mdpr"
 dataDir = ["mdprojects","media","pages"]
 projLoe = "ptfploe"
 projLoe24 = "ptfploe24"
+continguts = "/home/dokuwiki/wiki18/lib/plugins/wikiiocmodel/projects/ptfploe24/metadata/plantilles/continguts.txt"
 llistaArxius = "llistaPTLOE.txt"
 
 # Taula de equivalències ("original LOE": "destí LOE24")
@@ -67,8 +68,49 @@ def obteLlistaProjectes():
 Duplica el projecte LOE fent veure que la còpia és del tipus LOE24
 """
 def duplicaProjecte(pLoe, pLoe24):
+   if (verificaProjecte(pLoe, pLoe24)):
+      for dd in dataDir:
+         dataDirLoe = dirBase.replace("DATADIR", dd) + pLoe
+         dataDirLoe24 = dirBase.replace("DATADIR", dd) + pLoe24
+         if (dd == "mdprojects"):
+            dataDirLoe += projLoe
+            dataDirLoe24 += projLoe24
+
+         # crea el directori pel nou projecte LOE24
+         os.makedirs(dataDirLoe24, 0o777)
+
+         # copia el contingut del directori LOE al nou directori LOE24
+         if (dd == "pages"):
+            os.copy_file_range(continguts, dataDirLoe24)
+         else:
+            dirlist = os.listdir(dataDirLoe)
+            for f in dirlist:
+               os.copy_file_range("${dataDirLoe}/${f}", dataDirLoe24)
+
+      return True
+   else:
+      return False
+
+
+"""
+Verifica que el projecte LOE existeix, està sencer i elimina, si existeixen, els corresponents directoris LOE24
+"""
+def verificaProjecte(pLoe, pLoe24):
    for dd in dataDir:
-      dir = dirBase.replace("DATADIR", dd)
+      dataDirLoe = dirBase.replace("DATADIR", dd) + pLoe
+      dataDirLoe24 = dirBase.replace("DATADIR", dd) + pLoe24
+      if (not os.path.exists(dataDirLoe)):
+         print("error: ${dataDirLoe} no existeix")
+         return False
+
+      if (os.path.exists(dataDirLoe24)):
+         print("Atenció: el directori ${dataDirLoe24} ja existeix. Procedim a eliminar-lo")
+         dirlist = os.listdir(dataDirLoe24)
+         for f in dirlist:
+            os.remove("${dataDirLoe}/${f}")
+         os.rmdir(dataDirLoe24)
+
+   return True
 
 """
 Llegeix l'arxiu mdpr i retorna una estructura json
@@ -190,16 +232,18 @@ def inici():
    llista = obteLlistaProjectes()
    if (llista):
       for key, value in llista:
-         duplicaProjecte(key, value)
-         dades = carregaArxiuMdprLOE(key)
-         if (dades):
-            trans = process(dades)
-            trans = maqueado(str(trans))
-            with open(llista[key], "w") as f:
-               f.write(trans)
+         if (duplicaProjecte(key, value)):
+            dades = carregaArxiuMdprLOE(key)
+            if (dades):
+               trans = process(dades)
+               trans = maqueado(str(trans))
+               with open(llista[key], "w") as f:
+                  f.write(trans)
 
-print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-print("Importació de dades d'un pla de treball LOE a un nou pla de treball LOE24")
-print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+print(" Creació de nous plans de treball LOE24")
+print(" important les dades de plans de treball LOE")
+print(" i transformant-les al nou model LOE24")
+print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 inici()

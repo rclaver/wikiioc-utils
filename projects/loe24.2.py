@@ -1,0 +1,249 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jul  4 20:31:39 2025
+@author: rafael
+@description: Duplica un pla de treball LOE i transforma les dades en un projecte LOE24
+
+@parameters:
+   - l'arxiu que conté les dades s'ha d'anomenar: "llistaPTLOE.txt"
+   - l'arxiu ha d'estar en format JSON
+   - cada 'key' conté el nom d'un projecte LOE existent que es vol duplicar en una versió LOE24
+   - cada 'value' conté el nou nom pel nou projecte LOE24 que s'ha de generar
+   - exemple: {"pt_asx_m03b1_orig":"pt_asx_m03b1"}
+   - tots els arxius -original LOE i còpia LOE24- s'han de trobar a:
+      "/home/dokuwiki/wiki18/data/[mdprojects|media|pages]/documents_fp/plans_de_treball"
+"""
+
+import json, os
+
+dirBase = "/home/dokuwiki/wiki18/data/DATADIR/documents_fp/plans_de_treball"
+arxiuMdpr = "meta.mdpr"
+dataDir = ["mdprojects","media","pages"]
+projLoe = "ptfploe"
+projLoe24 = "ptfploe24"
+continguts = "/home/dokuwiki/wiki18/lib/plugins/wikiiocmodel/projects/ptfploe24/metadata/plantilles/continguts.txt"
+llistaArxius = "llistaPTLOE.txt"
+
+# Taula de equivalències ("original LOE": "destí LOE24")
+taulaEquiv = {
+    "taulaDadesUF": "taulaDadesUn",
+    "taulaDadesUnitats": "taulaUnitatRAs",
+    "dadesQualificacioUFs": "dadesQualificacioUns",
+}
+taulaDadesUF = {
+   "bloc": "bloc",
+   "unitat formativa": "unitat",
+   "nom": "nom",
+   "ordreImparticio": "ordreImparticio",
+   "hores": "hores",
+   "ponderació": "ponderació",
+   "ponderaci\\u00f3": "ponderaci\\u00f3"
+}
+taulaDadesUnitats = {
+   "unitat formativa": "unitat",
+   "unitat": "RA",
+   "nom": "",
+   "hores": ""
+}
+dadesQualificacioUFs = {
+   "unitat formativa": "unitat",
+   "tipus qualificació": "tipus qualificació",
+   "descripció qualificació": "descripció qualificació",
+   "abreviació qualificació": "abreviació qualificació",
+   "ponderació": "ponderació",
+   "ponderaci\\u00f3": "ponderaci\\u00f3"
+}
+
+def obteLlistaProjectes():
+   global llistaArxius
+   if (os.path.exists(llistaArxius)):
+      llista = open(llistaArxius).read()
+      return json.loads(llista)
+   else:
+      print("No he trobar el fitxer \'${llistaArxius}\' que conté la llista d'arxius")
+      return False
+
+"""
+Duplica el projecte LOE fent veure que la còpia és del tipus LOE24
+"""
+def duplicaProjecte(pLoe, pLoe24):
+   if (verificaProjecte(pLoe, pLoe24)):
+      for dd in dataDir:
+         dataDirLoe = dirBase.replace("DATADIR", dd) + pLoe
+         dataDirLoe24 = dirBase.replace("DATADIR", dd) + pLoe24
+         if (dd == "mdprojects"):
+            dataDirLoe += projLoe
+            dataDirLoe24 += projLoe24
+
+         # crea el directori pel nou projecte LOE24
+         os.makedirs(dataDirLoe24, 0o777)
+
+         # copia el contingut del directori LOE al nou directori LOE24
+         if (dd == "pages"):
+            os.copy_file_range(continguts, dataDirLoe24)
+         else:
+            dirlist = os.listdir(dataDirLoe)
+            for f in dirlist:
+               os.copy_file_range("${dataDirLoe}/${f}", dataDirLoe24)
+
+      return True
+   else:
+      return False
+
+
+"""
+Verifica que el projecte LOE existeix, està sencer i elimina, si existeixen, els corresponents directoris LOE24
+"""
+def verificaProjecte(pLoe, pLoe24):
+   for dd in dataDir:
+      dataDirLoe = dirBase.replace("DATADIR", dd) + pLoe
+      dataDirLoe24 = dirBase.replace("DATADIR", dd) + pLoe24
+      if (not os.path.exists(dataDirLoe)):
+         print("error: ${dataDirLoe} no existeix")
+         return False
+
+      if (os.path.exists(dataDirLoe24)):
+         print("Atenció: el directori ${dataDirLoe24} ja existeix. Procedim a eliminar-lo")
+         dirlist = os.listdir(dataDirLoe24)
+         for f in dirlist:
+            os.remove("${dataDirLoe}/${f}")
+         os.rmdir(dataDirLoe24)
+
+   return True
+
+"""
+Llegeix l'arxiu mdpr i retorna una estructura json
+"""
+def carregaArxiuMdprLOE(arxiu):
+   if (os.path.exists(arxiu)):
+      contingut = open(arxiu).read()
+      return json.loads(contingut)
+   else:
+      print("Arxiu \'${arxiu}\' no trobat")
+      return False
+
+"""
+Verifica si el valor donat és un json
+"""
+def isJson(data):
+   if (isinstance(data, dict)):
+      return True
+   elif (isinstance(data, int) or data.isnumeric()):
+      return False
+   elif (data == "false" or data == "False" or data == "true" or data == "True"):
+      return False
+   else:
+      try:
+         json.loads(data)
+      except (ValueError, TypeError):
+         return False
+      return True
+
+"""
+Verifica si existeix la variable donada. Si existeix retorna aquesta variable
+"""
+def existeix(var):
+   return eval(var) if var in globals() else None
+
+"""
+Transforma ' en " y elimina espais
+"""
+def maqueado(value):
+   # elimina espais
+   value = value.replace(": ", ":")
+   value = value.replace(", ", ",")
+   # canvia cometes simples per dobles
+   value = value.replace("{'", "{\"")
+   value = value.replace("'}", "\"}")
+   value = value.replace("':'", "\":\"")
+   value = value.replace("','", "\",\"")
+   value = value.replace(",'", ",\"")
+   value = value.replace("':", "\":")
+   # elimina caracters duplicats
+   value = value.replace("\\\\\"", "\\\"")
+   value = value.replace("\\\\\\\\", "\\\\")
+   value = value.replace("\"\"[", "\"[")
+   value = value.replace("]\"\"", "]\"")
+   # elimina coma final del conjunt d'elements
+   value = value.replace("},]", "}]")
+   return value
+
+"""
+Transforma un String en List
+"""
+def transStringToList(value):
+   value = json.loads(value)
+   return value
+
+"""
+ Cerca a la Taula d'equivalències 'taulaEquiv' la parella que conté
+ la clau origen i retorna la parella associada
+"""
+def cercaTaulaEquiv(origen):
+   desti = taulaEquiv.get(origen)
+   return desti if desti else origen
+
+"""
+ Cerca a la taula d'equivalències indicada la parella que conté
+ la clau origen i retorna la parella associada
+"""
+def cercaEquiv(taula, origen):
+   desti = taula.get(origen)
+   return desti
+
+"""
+ Procés principal
+"""
+def process(dades, arrayTrans=None):
+   parcial = {}
+
+   for key, value in dades.items():
+      if (not arrayTrans):
+         #si existeix, obté la taula d'equivalències indicada a 'key'
+         arrayTrans = existeix(key)
+         keyTrans = cercaTaulaEquiv(key)
+      else:
+         keyTrans = cercaEquiv(arrayTrans, key)
+
+      if (not isJson(value)):
+         parcial[keyTrans] = value
+      else:
+         if (not value or len(value) == 0 or value == None or value == "[]" ):
+            parcial[keyTrans] = value
+         else:
+            if (not isinstance(value, dict)):
+               value = transStringToList(value)
+               p = "["
+               for e in value:
+                  p += json.dumps(process(e, arrayTrans)) + ","
+               p += "]"
+               parcial[keyTrans] = json.dumps(p)
+            else:
+               parcial[keyTrans] = process(value, arrayTrans)
+         arrayTrans = None
+
+   return parcial
+
+"""
+bucle principal per a tots els arxius consignats a la llista d'arxius
+"""
+def inici():
+   llista = obteLlistaProjectes()
+   if (llista):
+      for key, value in llista:
+         if (duplicaProjecte(key, value)):
+            dades = carregaArxiuMdprLOE(key)
+            if (dades):
+               trans = process(dades)
+               trans = maqueado(str(trans))
+               with open(llista[key], "w") as f:
+                  f.write(trans)
+
+print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+print(" Creació de nous plans de treball LOE24")
+print(" important les dades de plans de treball LOE")
+print(" i transformant-les al nou model LOE24")
+print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
+inici()

@@ -17,8 +17,8 @@ Created on Fri Jul  4 20:31:39 2025
 
 import json, os, shutil
 
-#dirBase = "/home/dokuwiki/wiki18/data/DATADIR/documents_fp/plans_de_treball"
-dirBase0 = "/home/dokuwiki/wiki18"
+#dirBase = "/home/wikidev/wiki18/data/DATADIR/documents_fp/plans_de_treball"
+dirBase0 = "/home/wikidev/wiki18"
 dirBase1 = f"{dirBase0}/data"
 dirBase2 = "documents_fp/plans_de_treball"
 

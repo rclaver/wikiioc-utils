@@ -38,8 +38,6 @@ LANG=C.UTF-8
 C_NONE="\033[0m"
 CB_YLW="\033[1;33m"
 
-arrayOrigen=()
-
 dirBase0="/home/wikidev/wiki18"
 dirBase1="${dirBase0}/data"
 dirBase2="documents_fp/plans_de_treball"
@@ -52,6 +50,7 @@ continguts="${dirBase0}/lib/plugins/wikiiocmodel/projects/ptfploe24/metadata/pla
 llistaArxius="llistaPTLOE.txt"
 log="importLOEtoLOE24.log"
 
+declare -a arrayOrigen
 
 #
 # Funcions
@@ -143,15 +142,14 @@ function verificaProjecte() {
 #
 function llegeixArxiu() {
    local arxiu=$1
-   if [[ -f $arxiu ]]; then
+   if [ -f $arxiu ]; then
       local contingut=$(cat $arxiu)
       dades=${contingut##\{\"main\":\{}    #elimina, des del principi, la part major que coincideixi amb el patró
       dades=${dades%\}\}}                  #elimina, des del final, la part menor que coincideixi amb el patró
-      IFS=',' read -r -a arrayOrigen <<< $dades    #obté un array fent split amb el caracter ","
-      echo -e "\n-----------\nllegeixArxiu()\narrayOrigen\n-----------" >> $log; for e in "${arrayOrigen[@]}"; do echo -e "\t$e" >> $log; done; echo >> $log
-      echo $arrayOrigen
+      IFS=',' read -r -a arrayOrigen <<< "$dades"    #obté un array fent split amb el caracter ","
    else
       printf "Arxiu %s no trobat\n" $arxiu
+      estat="false"
    fi
 }
 
@@ -290,7 +288,7 @@ function processaJsonParcial() {
 #
 # Procés principal: tractament de tots els elements de l'arrayOrigen
 #
-function proces() {
+function processaArrayMdprLoe() {
    local cadenaComp e valor
    local iComp=0  #indicador de 'valor' compost (conté sub-elements json)
    local claud=0  #indicador de nivell de sub-element json (nombre de claudàtors oberts)
@@ -350,15 +348,12 @@ for parella in $llista; do
       rutaMdprLoe=${dirBase1}/mdprojects/${dirBase2}/${projecteLoe}/${tipusProjecteLoe}/${arxiuMdpr}
       rutaMdprLoe24=${dirBase1}/mdprojects/${dirBase2}/${projecteLoe24}/${tipusProjecteLoe24}/${arxiuMdpr}
 
-      v=$(llegeixArxiu $rutaMdprLoe)
-      echo -e "\n-----------\nv\n-----------" >> $log; for e in "${v[@]}"; do echo -e "\t$e" >> $log; done; echo >> $log
-      if [[ -n $v ]]; then
-         echo -e "\n-----------\narrayOrigen\n-----------" >> $log;
-         for e in "${arrayOrigen[@]}"; do echo -e "\t$e" >> $log; done; echo >> $log
+      llegeixArxiu $rutaMdprLoe
+      if [ "$estat" = "" ]; then
+         echo -e "\n-----------\narrayOrigen\n-----------" >> $log; for e in "${arrayOrigen[@]}"; do echo -e "\t$e" >> $log; done; echo >> $log
 
          jsonFinal="{\"main\":{"
-         # processa l'array
-         proces $arrayOrigen
+         processaArrayMdprLoe
 
          echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
          echo -e "RESULTAT per a ${projecteLoe24}"

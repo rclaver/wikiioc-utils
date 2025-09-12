@@ -38,6 +38,8 @@ LANG=C.UTF-8
 C_NONE="\033[0m"
 CB_YLW="\033[1;33m"
 
+arrayOrigen=()
+
 dirBase0="/home/wikidev/wiki18"
 dirBase1="${dirBase0}/data"
 dirBase2="documents_fp/plans_de_treball"
@@ -48,8 +50,8 @@ tipusProjecteLoe="ptfploe"
 tipusProjecteLoe24="ptfploe24"
 continguts="${dirBase0}/lib/plugins/wikiiocmodel/projects/ptfploe24/metadata/plantilles/continguts.txt"
 llistaArxius="llistaPTLOE.txt"
+log="importLOEtoLOE24.log"
 
-declare -a arrayOrigen
 
 #
 # Funcions
@@ -63,6 +65,7 @@ function obteLlistaArxius() {
       llista=$(cat $llistaArxius)
       llista=${llista#\{}   #elimina, des del principi, la part que coincideixi amb el patró
       llista=${llista%\}}   #elimina, des del final, la part menor que coincideixi amb el patró
+      echo -e "obteLlistaArxius() ${llista}" >> $log
       echo $llista
    else
       echo -e "No he trobar el fitxer \'${llistaArxius}\' que conté la llista de projectes"
@@ -75,11 +78,11 @@ function obteLlistaArxius() {
 function duplicaProjecte() {
    pLoe=$1
    pLoe24=$2
-   printf "duplicaProjecte() %s %s\n" $pLoe $pLoe24
+   echo -e "\nduplicaProjecte(${pLoe} ${pLoe24})" >> $log
 
-   v=verificaProjecte $pLoe $pLoe24
-   printf "resultat verificaProjecte(%s %s) = %s\n\n" $pLoe $pLoe24 $v
-   if ( $v ); then
+   v=$(verificaProjecte $pLoe $pLoe24)
+   echo -e "resultat de verificaProjecte() = ${v}" >> $log
+   if [[ -n $v ]]; then
       for dd in "${dataDir[@]}"; do
          dataDirLoe="${dirBase1}/${dd}/${dirBase2}/${pLoe}"
          dataDirLoe24="${dirBase1}/${dd}/${dirBase2}/${pLoe24}"
@@ -89,19 +92,24 @@ function duplicaProjecte() {
          fi
 
          # crea el directori pel nou projecte LOE24
-         mkdir -p dataDirLoe24
-         printf "creat nou directori %s\n" $dataDirLoe24
+         echo -e "_ crea nou directori ${dataDirLoe24}" >> $log
+         mkdir -p $dataDirLoe24
 
-         # copia el contingut del directori LOE al nou directori LOE24
-         if [[ "$dd" = "pages" ]]; then
-            cp $continguts "${dataDirLoe24}/continguts.txt"
+         if [[ -d $dataDirLoe24 ]]; then
+            # copia el contingut del directori LOE al nou directori LOE24
+            if [[ "$dd" = "pages" ]]; then
+               echo -e "_ _ copia ${continguts} a ${dataDirLoe24}/continguts.txt\n" >> $log
+               cp $continguts ${dataDirLoe24}/continguts.txt
+            else
+               echo -e "_ _ copia ${dataDirLoe}/* a ${dataDirLoe24}/" >> $log
+               cp ${dataDirLoe}/* ${dataDirLoe24}/
+            fi
          else
-            cp -r "${dataDirLoe}/*" "${dataDirLoe24}/"
+            echo -e "ERROR: el directori ${dataDirLoe24} no s'ha creat" >> $log
+            return 1
          fi
       done
-      return 0 #true
-   else
-      return 1 #false
+      echo "true"
    fi
 }
 
@@ -111,23 +119,21 @@ function duplicaProjecte() {
 function verificaProjecte() {
    pLoe=$1
    pLoe24=$2
-   printf "verificaProjecte() %s %s\n" $pLoe $pLoe24
+   echo -e "verificaProjecte(${pLoe} ${pLoe24})" >> $log
    for dd in "${dataDir[@]}"; do
       dataDirLoe="${dirBase1}/${dd}/${dirBase2}/${pLoe}"
       dataDirLoe24="${dirBase1}/${dd}/${dirBase2}/${pLoe24}"
-      if [[ -f $dataDirLoe ]]; then
-         printf "error: %s, no existeix\n" $dataDirLoe
-         echo 1
+      if [[ ! -d $dataDirLoe ]]; then
+         echo -e "ERROR: ${dataDirLoe} no existeix\n" >> $log
          return 1
       fi
 
-      if [[ -f $dataDirLoe24 ]]; then
-         printf "Atenció: el directori %s, ja existeix. Procedim a eliminar-lo\n" $dataDirLoe24
+      if [[ -d $dataDirLoe24 ]]; then
+         echo -e "_ Atenció: el directori ${dataDirLoe24} ja existeix. Procedim a eliminar-lo." >> $log
          rm -R $dataDirLoe24
       fi
    done
-   echo 0
-   return 0
+   echo "true"
 }
 
 
@@ -141,11 +147,11 @@ function llegeixArxiu() {
       local contingut=$(cat $arxiu)
       dades=${contingut##\{\"main\":\{}    #elimina, des del principi, la part major que coincideixi amb el patró
       dades=${dades%\}\}}                  #elimina, des del final, la part menor que coincideixi amb el patró
-      IFS=',' read -r -a arrayOrigen <<< "$dades"    #obté un array fent split amb el caracter ","
-      return 0
+      IFS=',' read -r -a arrayOrigen <<< $dades    #obté un array fent split amb el caracter ","
+      echo -e "\n-----------\nllegeixArxiu()\narrayOrigen\n-----------" >> $log; for e in "${arrayOrigen[@]}"; do echo -e "\t$e" >> $log; done; echo >> $log
+      echo $arrayOrigen
    else
       printf "Arxiu %s no trobat\n" $arxiu
-      return 1
    fi
 }
 
@@ -325,9 +331,10 @@ function proces() {
 # ---------------------
 # INICI
 # ---------------------
-echo -e "${CB_YLW}+---------------------------------------------------------------------------+"
-echo -e "|  Importació de dades des d'un projecte PT LOE a un nou projecte PT LOE24  |"
-echo -e "+---------------------------------------------------------------------------+${C_NONE}"
+echo -e "${CB_YLW}+--------------------------------------------------------------------------------------+"
+echo -e "|  Importació de dades des d'una llista de projectes PT LOE a nous projectes PT LOE24  |"
+echo -e "+--------------------------------------------------------------------------------------+${C_NONE}"
+echo -e "Importació de dades des d'una llista de projectes PT LOE a nous projectes PT LOE24\n" > $log
 
 llista=$(obteLlistaArxius $llistaArxius)
 
@@ -336,26 +343,29 @@ for parella in $llista; do
    projecteLoe=${parella/:*}        #part anterior a :
    projecteLoe24=${parella#*:}      #part posterior a :
    projecteLoe24=${projecteLoe24%,} #elimina la coma final
-   echo -e "projecteLoe: ${projecteLoe}"
-   echo -e "projecteLoe24 : ${projecteLoe24}\n"
+   echo -e "projecteLoe  : ${projecteLoe}"
+   echo -e "projecteLoe24: ${projecteLoe24}"
 
    if ( duplicaProjecte $projecteLoe $projecteLoe24 ); then
-      llegeixArxiu $projecteLoe
+      rutaMdprLoe=${dirBase1}/mdprojects/${dirBase2}/${projecteLoe}/${tipusProjecteLoe}/${arxiuMdpr}
+      rutaMdprLoe24=${dirBase1}/mdprojects/${dirBase2}/${projecteLoe24}/${tipusProjecteLoe24}/${arxiuMdpr}
 
-      if ( llegeixArxiu $projecteLoe ); then
-         #echo -e "${CB_YLW}arrayOrigen${C_NONE}"
-         #for e in "${arrayOrigen[@]}"; do echo -e "\t$e"; done; echo
+      v=$(llegeixArxiu $rutaMdprLoe)
+      echo -e "\n-----------\nv\n-----------" >> $log; for e in "${v[@]}"; do echo -e "\t$e" >> $log; done; echo >> $log
+      if [[ -n $v ]]; then
+         echo -e "\n-----------\narrayOrigen\n-----------" >> $log;
+         for e in "${arrayOrigen[@]}"; do echo -e "\t$e" >> $log; done; echo >> $log
 
          jsonFinal="{\"main\":{"
          # processa l'array
-         #############proces $arrayOrigen
+         proces $arrayOrigen
 
          echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
          echo -e "RESULTAT per a ${projecteLoe24}"
          echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
          jsonFinal=${jsonFinal%,}   #elimina la coma final
          jsonFinal+="}}"
-         echo $jsonFinal > $projecteLoe24
+         echo $jsonFinal > $rutaMdprLoe24
          echo -e "${CB_YLW}--- jsonFinal ---${C_NONE}\n$jsonFinal\n\n"
       fi
    fi

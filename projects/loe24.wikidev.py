@@ -89,7 +89,7 @@ def duplicaProjecte(pLoe, pLoe24):
          else:
             dirlist = os.listdir(dataDirLoe)
             for f in dirlist:
-               shutil.copyfile(f"{dataDirLoe}/{f}", f'{dataDirLoe24}/{f}')
+               shutil.copyfile(f"{dataDirLoe}/{f}/*", f'{dataDirLoe24}/{f}')
 
       return True
    else:
@@ -256,7 +256,7 @@ def inici():
             if (dades):
                trans = process(dades)
                trans = maqueado(str(trans))
-               nouArxiuMdpr24 = f"{dirBase1}/{dd}/{dirBase2}/{projectLoe24}/{tipusProjecteLoe24}/meta.mdpr"
+               nouArxiuMdpr24 = f"{dirBase1}/mdprojects/{dirBase2}/{projectLoe24}/{tipusProjecteLoe24}/meta.mdpr"
                with open(nouArxiuMdpr24, "w") as f:
                   f.write(trans)
 

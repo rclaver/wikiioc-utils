@@ -148,9 +148,15 @@ def process(dades, arrayTrans=None):
       if (not isJson(value) or len(value) == 0 or value == None or value == "[]"):
          parcial[keyTrans] = value
       else:
-         if (not isinstance(value, dict)):
+         if (isinstance(value, dict)):
+            parcial = process(value, arrayTrans)
+         else:
             value = json.loads(value)
-         parcial = process(value, arrayTrans)
+            p = "["
+            for k in value:
+               p += process(k, arrayTrans) + ","
+            p += "]"
+            parcial = p
 
    return parcial
 

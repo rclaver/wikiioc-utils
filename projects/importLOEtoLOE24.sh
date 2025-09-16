@@ -1,8 +1,11 @@
 #!/bin/bash
+###
+# Importació de dades des de projectes PT LOE a nous projectes PT LOE24
+###
 
-# Importació de dades des d'un projecte PT LOE a un projecte PT LOE24
-
-# Taula de equivalències (original=destí)
+#
+# Taula de equivalències (original_a_LOE : nou_LOE24)
+#
 taulaEquiv=('taulaDadesUF:taulaDadesUn'
             'taulaDadesUnitats:taulaUnitatRAs'
             'dadesQualificacioUFs:dadesQualificacioUns'
@@ -30,26 +33,111 @@ dadesQualificacioUFs=('unitat@formativa:unitat'
 
 #
 # Variables globals
+#
 LANG=C.UTF-8
 C_NONE="\033[0m"
 CB_YLW="\033[1;33m"
 
+dirBase0="/home/wikidev/wiki18"
+dirBase1="${dirBase0}/data"
+dirBase2="documents_fp/plans_de_treball"
+
+arxiuMdpr="meta.mdpr"
+dataDir=("mdprojects" "media" "pages")
+tipusProjecteLoe="ptfploe"
+tipusProjecteLoe24="ptfploe24"
+continguts="${dirBase0}/lib/plugins/wikiiocmodel/projects/ptfploe24/metadata/plantilles/continguts.txt"
 llistaArxius="llistaPTLOE.txt"
+log="importLOEtoLOE24.log"
+
 declare -a arrayOrigen
 
+#
+# Funcions
+#
+
+#
+# Obté una llista de parelles dels projectes a tractar: "projecte Origen LOE" : "projecte Nou LOE24"
+#
 function obteLlistaArxius() {
    if [ -f $llistaArxius ]; then
       llista=$(cat $llistaArxius)
       llista=${llista#\{}   #elimina, des del principi, la part que coincideixi amb el patró
       llista=${llista%\}}   #elimina, des del final, la part menor que coincideixi amb el patró
+      echo -e "obteLlistaArxius() ${llista}" >> $log
       echo $llista
    else
-      echo -e "No he trobar el fitxer \'${llistaArxius}\' que conté la llista d'arxius"
+      echo -e "No he trobar el fitxer \'${llistaArxius}\' que conté la llista de projectes"
    fi
 }
 
 #
-# llegeix l'arxiu mdpr, fragmenta la cadena json obtinguda truncant amb ","
+# Duplica el projecte LOE fent veure que la còpia és del tipus LOE24
+#
+function duplicaProjecte() {
+   pLoe=$1
+   pLoe24=$2
+   echo -e "\nduplicaProjecte(${pLoe} ${pLoe24})" >> $log
+
+   v=$(verificaProjecte $pLoe $pLoe24)
+   echo -e "resultat de verificaProjecte() = ${v}" >> $log
+   if [[ -n $v ]]; then
+      for dd in "${dataDir[@]}"; do
+         dataDirLoe="${dirBase1}/${dd}/${dirBase2}/${pLoe}"
+         dataDirLoe24="${dirBase1}/${dd}/${dirBase2}/${pLoe24}"
+         if [[ "$dd" = "mdprojects" ]]; then
+            dataDirLoe="${dataDirLoe}/${tipusProjecteLoe}"
+            dataDirLoe24="${dataDirLoe24}/${tipusProjecteLoe24}"
+         fi
+
+         # crea el directori pel nou projecte LOE24
+         echo -e "_ crea nou directori ${dataDirLoe24}" >> $log
+         mkdir -p $dataDirLoe24
+
+         if [[ -d $dataDirLoe24 ]]; then
+            # copia el contingut del directori LOE al nou directori LOE24
+            if [[ "$dd" = "pages" ]]; then
+               echo -e "_ _ copia ${continguts} a ${dataDirLoe24}/continguts.txt\n" >> $log
+               cp $continguts ${dataDirLoe24}/continguts.txt
+            else
+               echo -e "_ _ copia ${dataDirLoe}/* a ${dataDirLoe24}/" >> $log
+               cp ${dataDirLoe}/* ${dataDirLoe24}/
+            fi
+         else
+            echo -e "ERROR: el directori ${dataDirLoe24} no s'ha creat" >> $log
+            return 1
+         fi
+      done
+      echo "true"
+   fi
+}
+
+#
+# Verifica que el projecte LOE existeix, està sencer i elimina, si existeixen, els corresponents directoris LOE24
+#
+function verificaProjecte() {
+   pLoe=$1
+   pLoe24=$2
+   echo -e "verificaProjecte(${pLoe} ${pLoe24})" >> $log
+   for dd in "${dataDir[@]}"; do
+      dataDirLoe="${dirBase1}/${dd}/${dirBase2}/${pLoe}"
+      dataDirLoe24="${dirBase1}/${dd}/${dirBase2}/${pLoe24}"
+      if [[ ! -d $dataDirLoe ]]; then
+         echo -e "ERROR: ${dataDirLoe} no existeix\n" >> $log
+         return 1
+      fi
+
+      if [[ -d $dataDirLoe24 ]]; then
+         echo -e "_ Atenció: el directori ${dataDirLoe24} ja existeix. Procedim a eliminar-lo." >> $log
+         rm -R $dataDirLoe24
+      fi
+   done
+   echo "true"
+}
+
+
+#
+# Llegeix l'arxiu mdpr, fragmenta la cadena json obtinguda truncant amb ","
 # i guarda els elements en format array a 'arrayOrigen'
 #
 function llegeixArxiu() {
@@ -60,7 +148,8 @@ function llegeixArxiu() {
       dades=${dades%\}\}}                  #elimina, des del final, la part menor que coincideixi amb el patró
       IFS=',' read -r -a arrayOrigen <<< "$dades"    #obté un array fent split amb el caracter ","
    else
-      estat="Arxiu ${arxiu}, no trobat"
+      printf "Arxiu %s no trobat\n" $arxiu
+      estat="false"
    fi
 }
 
@@ -199,7 +288,7 @@ function processaJsonParcial() {
 #
 # Procés principal: tractament de tots els elements de l'arrayOrigen
 #
-function proces() {
+function processaArrayMdprLoe() {
    local cadenaComp e valor
    local iComp=0  #indicador de 'valor' compost (conté sub-elements json)
    local claud=0  #indicador de nivell de sub-element json (nombre de claudàtors oberts)
@@ -240,42 +329,42 @@ function proces() {
 # ---------------------
 # INICI
 # ---------------------
-echo -e "${CB_YLW}+------------------------------------------------------------------------+"
-echo -e "|  Importació de dades des d'un projecte PT LOE a un projecte PT LOE24  |"
-echo -e "+------------------------------------------------------------------------+${C_NONE}"
+echo -e "${CB_YLW}+--------------------------------------------------------------------------------------+"
+echo -e "|  Importació de dades des d'una llista de projectes PT LOE a nous projectes PT LOE24  |"
+echo -e "+--------------------------------------------------------------------------------------+${C_NONE}"
+echo -e "Importació de dades des d'una llista de projectes PT LOE a nous projectes PT LOE24\n" > $log
 
 llista=$(obteLlistaArxius $llistaArxius)
 
 for parella in $llista; do
-   parella=${parella//\"}   #elimina cometes
-   f_origen=${parella/:*}   #part anterior a :
-   f_desti=${parella#*:}    #part posterior a :
-   f_desti=${f_desti%,}     #elimina la coma final
-   echo -e "f_origen: ${f_origen}"
-   echo -e "f_desti : ${f_desti}\n"
+   parella=${parella//\"}           #elimina cometes
+   projecteLoe=${parella/:*}        #part anterior a :
+   projecteLoe24=${parella#*:}      #part posterior a :
+   projecteLoe24=${projecteLoe24%,} #elimina la coma final
+   echo -e "projecteLoe  : ${projecteLoe}"
+   echo -e "projecteLoe24: ${projecteLoe24}"
 
-   llegeixArxiu $f_origen
-   if [ "$estat" = "" ]; then
-      #echo -e "${CB_YLW}arrayOrigen${C_NONE}"
-      #for e in "${arrayOrigen[@]}"; do echo -e "\t$e"; done
-      #echo
+   if ( duplicaProjecte $projecteLoe $projecteLoe24 ); then
+      rutaMdprLoe=${dirBase1}/mdprojects/${dirBase2}/${projecteLoe}/${tipusProjecteLoe}/${arxiuMdpr}
+      rutaMdprLoe24=${dirBase1}/mdprojects/${dirBase2}/${projecteLoe24}/${tipusProjecteLoe24}/${arxiuMdpr}
 
-      jsonFinal="{\"main\":{"
-      # processa l'array
-      proces $arrayOrigen
+      llegeixArxiu $rutaMdprLoe
+      if [ "$estat" = "" ]; then
+         echo -e "\n-----------\narrayOrigen\n-----------" >> $log; for e in "${arrayOrigen[@]}"; do echo -e "\t$e" >> $log; done; echo >> $log
 
-      echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-      echo -e "RESULTAT per a ${f_desti}"
-      echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-      jsonFinal=${jsonFinal%,}   #elimina la coma final
-      jsonFinal+="}}"
-      echo $jsonFinal > $f_desti
-      echo -e "${CB_YLW}--- jsonFinal ---${C_NONE}\n$jsonFinal\n\n"
-   else
-      echo -e "${estat}"
+         jsonFinal="{\"main\":{"
+         processaArrayMdprLoe
+
+         echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+         echo -e "RESULTAT per a ${projecteLoe24}"
+         echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+         jsonFinal=${jsonFinal%,}   #elimina la coma final
+         jsonFinal+="}}"
+         echo $jsonFinal > $rutaMdprLoe24
+         echo -e "${CB_YLW}--- jsonFinal ---${C_NONE}\n$jsonFinal\n\n"
+      fi
    fi
-
 done
 
-echo "------------------------------"
 #read -p "Procès finalitzat. Prem Retorn"
+echo -e "---------------------\n- Procès finalitzat -\n---------------------\n"

@@ -17,8 +17,8 @@ Created on Fri Jul  4 20:31:39 2025
 
 import json, os, shutil
 
-#dirBase = "/home/dokuwiki/wiki18/data/DATADIR/documents_fp/plans_de_treball"
-dirBase0 = "/home/dokuwiki/wiki18"
+#dirBase = "/home/wikidev/wiki18/data/DATADIR/documents_fp/plans_de_treball"
+dirBase0 = "/home/wikidev/wiki18"
 dirBase1 = f"{dirBase0}/data"
 dirBase2 = "documents_fp/plans_de_treball"
 
@@ -189,8 +189,10 @@ def maqueado(value):
 Transforma un String en List
 """
 def transStringToList(value):
-   value = json.loads(value)
-   return value
+   llista = json.loads(value)
+   if isinstance(llista, int):
+      llista = [llista]
+   return llista
 
 """
  Cerca a la Taula d'equivalències 'taulaEquiv' la parella que conté
@@ -246,11 +248,11 @@ bucle principal per a tots els arxius consignats a la llista d'arxius
 """
 def inici():
    llista = obteLlistaProjectes()
-   print("Llista de projectes", llista)
+   print("llista de projectes", llista)
    if (llista):
       for projectLoe in llista:
          projectLoe24 = llista[projectLoe]
-         print("- projecte actual:", projectLoe, " - ", projectLoe24)
+         print("PROJECTE actual:", projectLoe, "-", projectLoe24)
          if (duplicaProjecte(projectLoe, projectLoe24)):
             dades = carregaArxiuMdprLOE(projectLoe)
             if (dades):

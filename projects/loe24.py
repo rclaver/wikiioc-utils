@@ -8,7 +8,7 @@ Created on Fri Jul  4 20:31:39 2025
 
 import json, os
 
-llistaArxius = "llistaPTLOE.txt"
+llistaArxius = "llistaArxiusPTLOE.txt"
 
 # Taula de equivalències ("original LOE": "destí LOE24")
 taulaEquiv = {
@@ -58,7 +58,7 @@ def carregaArxiuMdprLOE(arxiu):
       contingut = open(arxiu).read()
       return json.loads(contingut)
    else:
-      print("Arxiu \'${arxiu}\' no trobat")
+      print("Arxiu", arxiu, "no trobat")
       return False
 
 """
@@ -144,22 +144,13 @@ def process(dades, arrayTrans=None):
       else:
          keyTrans = cercaEquiv(arrayTrans, key)
 
-      if (not isJson(value)):
+
+      if (not isJson(value) or len(value) == 0 or value == None or value == "[]"):
          parcial[keyTrans] = value
       else:
-         if (not value or len(value) == 0 or value == None or value == "[]" ):
-            parcial[keyTrans] = value
-         else:
-            if (not isinstance(value, dict)):
-               value = transStringToList(value)
-               p = "["
-               for e in value:
-                  p += json.dumps(process(e, arrayTrans)) + ","
-               p += "]"
-               parcial[keyTrans] = json.dumps(p)
-            else:
-               parcial[keyTrans] = process(value, arrayTrans)
-         arrayTrans = None
+         if (not isinstance(value, dict)):
+            value = json.loads(value)
+         parcial = process(value, arrayTrans)
 
    return parcial
 
@@ -173,9 +164,10 @@ def inici():
          dades = carregaArxiuMdprLOE(key)
          if (dades):
             trans = process(dades)
-            trans = maqueado(str(trans))
+            nouJson = {"main":trans}
+            #trans = maqueado(str(trans))
             with open(llista[key], "w") as f:
-               f.write(trans)
+               f.write(json.dumps(nouJson))
 
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 print("Importació de dades d'un pla de treball LOE a un nou pla de treball LOE24")

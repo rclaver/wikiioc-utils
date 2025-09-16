@@ -1,0 +1,3 @@
+{
+"/home/rafael/projectes/python/wikiioc-utils/projects/data/loe/meta.mdpr":"/home/rafael/projectes/python/wikiioc-utils/projects/data/loe24/meta.mdpr"
+}

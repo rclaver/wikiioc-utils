@@ -23,6 +23,7 @@
 {\"tipus\":\"autoavaluaci\\u00f3\",\"eina\":\"Exercicis d'autoavaluaci\\u00f3 i activitats\",\"opcionalitat\":\"opcional per\\u00f2 recomanat\",\"puntuable\":false},
 {\"tipus\":\"f\\u00f2rum\",\"eina\":\"F\\u00f2rum de l'aula\",\"opcionalitat\":\"Participaci\\u00f3 recomanada\",\"puntuable\":false},
 {\"tipus\":\"exercicis\",\"eina\":\"Exercicis d'avaluaci\\u00f3 cont\\u00ednua\",\"opcionalitat\":\"opcional\",\"puntuable\":true}]",
+
 "resultatsAprenentatge":"[]",
 "activitatsAprenentatge":"[{\"unitat\":\"1\",\"per\\u00edode\":\"1\",\"eina\":\"lectura\",\"descripci\\u00f3\":\"Lectura de l'apartat 1\"},
 {\"unitat\":\"1\",\"per\\u00edode\":\"1\",\"eina\":\"autoavaluci\\u00f3\",\"descripci\\u00f3\":\"fer les activitats i exercicis d'autoavaluaci\\u00f3\"}]",

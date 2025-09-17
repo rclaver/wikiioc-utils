@@ -99,12 +99,12 @@ def maqueado(value):
    value = value.replace(",'", ",\"")
    value = value.replace("':", "\":")
    # elimina caracters duplicats
+   value = value.replace("\\\"", "\"")
    value = value.replace("\\\\\"", "\\\"")
+   value = value.replace("\\\\\\\"", "\"")
    value = value.replace("\\\\\\\\", "\\\\")
    value = value.replace("\"\"[", "\"[")
    value = value.replace("]\"\"", "]\"")
-   # elimina coma final del conjunt d'elements
-   value = value.replace("},]", "}]")
    return value
 
 """
@@ -128,7 +128,7 @@ def cercaTaulaEquiv(origen):
 """
 def cercaEquiv(taula, origen):
    desti = taula.get(origen)
-   return desti
+   return desti if desti else origen
 
 """
  Procés principal
@@ -146,6 +146,7 @@ def process(dades, arrayTrans=None):
 
 
       if (not isJson(value) or len(value) == 0 or value == None or value == "[]"):
+         print("arrayTrans", arrayTrans, "\nkey       ", key, "\nkeyTrans  ", keyTrans, "\nvalue     ", value)
          parcial[keyTrans] = value
       else:
          if (isinstance(value, dict)):
@@ -154,9 +155,13 @@ def process(dades, arrayTrans=None):
             value = json.loads(value)
             p = "["
             for k in value:
-               p += process(k, arrayTrans) + ","
-            p += "]"
-            parcial = p
+               pk = process(k, arrayTrans)
+               p += json.dumps(pk) + ","
+            p = p.rstrip(",") + "]"
+            p = p.replace('"', '\\"')
+            parcial[keyTrans] = '\"' + p + '\"'
+
+         arrayTrans = None
 
    return parcial
 
@@ -170,10 +175,10 @@ def inici():
          dades = carregaArxiuMdprLOE(key)
          if (dades):
             trans = process(dades)
-            nouJson = {"main":trans}
             #trans = maqueado(str(trans))
+            nouJson = '{"main":' + trans + '}'
             with open(llista[key], "w") as f:
-               f.write(json.dumps(nouJson))
+               f.write(nouJson)
 
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 print("Importació de dades d'un pla de treball LOE a un nou pla de treball LOE24")

@@ -165,7 +165,7 @@ Verifica si el valor donat és un json
 def isJson(data):
    if (isinstance(data, dict)):
       return True
-   elif (isinstance(data, int) or data.isnumeric()):
+   elif (isinstance(data, int)):
       return False
    elif (data == "false" or data == "False" or data == "true" or data == "True"):
       return False

@@ -1,3 +1,0 @@
-{
-"/home/rafael/projectes/wikiioc-utils/projects/data/loe/meta.mdpr":"/home/rafael/projectes/wikiioc-utils/projects/data/loe24/meta.mdpr"
-}

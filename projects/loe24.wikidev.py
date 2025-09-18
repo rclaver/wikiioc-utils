@@ -17,17 +17,17 @@ Created on Fri Jul  4 20:31:39 2025
 
 import json, os, shutil
 
-#dirBase = "/home/wikidev/wiki18/data/DATADIR/documents_fp/plans_de_treball"
 dirBase0 = "/home/wikidev/wiki18"
 dirBase1 = f"{dirBase0}/data"
 dirBase2 = "documents_fp/plans_de_treball"
 
 arxiuMdpr = "meta.mdpr"
-dataDir = ["mdprojects","media","pages"]
+dirMdp = "mdprojects"
+dataDir = [dirMdp,"media","pages"]
 tipusProjecteLoe = "ptfploe"
 tipusProjecteLoe24 = "ptfploe24"
 continguts = f"{dirBase0}/lib/plugins/wikiiocmodel/projects/ptfploe24/metadata/plantilles/continguts.txt"
-llistaArxius = "llistaPTLOE.txt"
+llistaProjectes = "llistaPTLOE.txt"
 
 # Taula de equivalències ("original LOE": "destí LOE24")
 taulaEquiv = {
@@ -60,12 +60,12 @@ dadesQualificacioUFs = {
 }
 
 def obteLlistaProjectes():
-   global llistaArxius
-   if (os.path.exists(llistaArxius)):
-      llista = open(llistaArxius).read()
+   global llistaProjectes
+   if (os.path.exists(llistaProjectes)):
+      llista = open(llistaProjectes).read()
       return json.loads(llista)
    else:
-      print("No he trobar el fitxer", llistaArxius, "que conté la llista d'arxius")
+      print("No he trobar el fitxer", llistaProjectes, "que conté la llista de projectes")
       return False
 
 """
@@ -76,7 +76,7 @@ def duplicaProjecte(pLoe, pLoe24):
       for dd in dataDir:
          dataDirLoe = f"{dirBase1}/{dd}/{dirBase2}/{pLoe}"
          dataDirLoe24 = f"{dirBase1}/{dd}/{dirBase2}/{pLoe24}"
-         if (dd == "mdprojects"):
+         if (dd == dirMdp):
             dataDirLoe += "/"+tipusProjecteLoe
             dataDirLoe24 += "/"+tipusProjecteLoe24
 
@@ -131,7 +131,7 @@ def eliminaDirectori(dir):
 Llegeix l'arxiu mdpr i retorna una estructura json
 """
 def carregaArxiuMdprLOE(pLoe):
-   arxiu = f"{dirBase1}/mdprojects/{dirBase2}/{pLoe}/{tipusProjecteLoe}/meta.mdpr"
+   arxiu = f"{dirBase1}/{dirMdp}/{dirBase2}/{pLoe}/{tipusProjecteLoe}/meta.mdpr"
    if (os.path.exists(arxiu)):
       contingut = open(arxiu).read()
       return json.loads(contingut)
@@ -140,12 +140,32 @@ def carregaArxiuMdprLOE(pLoe):
       return False
 
 """
+Transforma ' en " y elimina espais
+"""
+def maqueado(value):
+   # elimina espais
+   value = value.replace(": ", ":")
+   value = value.replace(", ", ",")
+   # canvia cometes simples per dobles
+   value = value.replace("{'", "{\"")
+   value = value.replace("'}", "\"}")
+   value = value.replace("':'", "\":\"")
+   value = value.replace("','", "\",\"")
+   value = value.replace(",'", ",\"")
+   value = value.replace("':", "\":")
+   # elimina caracters duplicats
+   value = value.replace("\\\\", "\\")
+   value = value.replace("\"\"[", "\"[")
+   value = value.replace("]\"\"", "]\"")
+   return value
+
+"""
 Verifica si el valor donat és un json
 """
 def isJson(data):
    if (isinstance(data, dict)):
       return True
-   elif (isinstance(data, int)):
+   elif (isinstance(data, int) or data.isnumeric()):
       return False
    elif (data == "false" or data == "False" or data == "true" or data == "True"):
       return False
@@ -163,38 +183,6 @@ def existeix(var):
    return eval(var) if var in globals() else None
 
 """
-Transforma ' en " y elimina espais
-"""
-def maqueado(value):
-   # elimina espais
-   value = value.replace(": ", ":")
-   value = value.replace(", ", ",")
-   # canvia cometes simples per dobles
-   value = value.replace("{'", "{\"")
-   value = value.replace("'}", "\"}")
-   value = value.replace("':'", "\":\"")
-   value = value.replace("','", "\",\"")
-   value = value.replace(",'", ",\"")
-   value = value.replace("':", "\":")
-   # elimina caracters duplicats
-   value = value.replace("\\\\\"", "\\\"")
-   value = value.replace("\\\\\\\\", "\\\\")
-   value = value.replace("\"\"[", "\"[")
-   value = value.replace("]\"\"", "]\"")
-   # elimina coma final del conjunt d'elements
-   value = value.replace("},]", "}]")
-   return value
-
-"""
-Transforma un String en List
-"""
-def transStringToList(value):
-   llista = json.loads(value)
-   if isinstance(llista, int):
-      llista = [llista]
-   return llista
-
-"""
  Cerca a la Taula d'equivalències 'taulaEquiv' la parella que conté
  la clau origen i retorna la parella associada
 """
@@ -208,7 +196,7 @@ def cercaTaulaEquiv(origen):
 """
 def cercaEquiv(taula, origen):
    desti = taula.get(origen)
-   return desti
+   return desti if desti else origen
 
 """
  Procés principal
@@ -224,21 +212,22 @@ def process(dades, arrayTrans=None):
       else:
          keyTrans = cercaEquiv(arrayTrans, key)
 
-      if (not isJson(value)):
+
+      if (not isJson(value) or len(value) == 0 or value == None or value == "[]"):
          parcial[keyTrans] = value
       else:
-         if (not value or len(value) == 0 or value == None or value == "[]" ):
-            parcial[keyTrans] = value
+         if (isinstance(value, dict)):
+            parcial = process(value, arrayTrans)
          else:
-            if (not isinstance(value, dict)):
-               value = transStringToList(value)
-               p = "["
-               for e in value:
-                  p += json.dumps(process(e, arrayTrans)) + ","
-               p += "]"
-               parcial[keyTrans] = json.dumps(p)
-            else:
-               parcial[keyTrans] = process(value, arrayTrans)
+            value = json.loads(value)
+            p = "["
+            for k in value:
+               pk = process(k, arrayTrans)
+               p += json.dumps(pk) + ","
+            p = p.rstrip(",") + "]"
+            p = p.replace('"', '\\"')
+            parcial[keyTrans] = '\"' + p + '\"'
+
          arrayTrans = None
 
    return parcial
@@ -258,9 +247,10 @@ def inici():
             if (dades):
                trans = process(dades)
                trans = maqueado(str(trans))
-               nouArxiuMdpr24 = f"{dirBase1}/mdprojects/{dirBase2}/{projectLoe24}/{tipusProjecteLoe24}/meta.mdpr"
+               nouJson = '{"main":' + trans + '}'
+               nouArxiuMdpr24 = f"{dirBase1}/{dirMdp}/{dirBase2}/{projectLoe24}/{tipusProjecteLoe24}/meta.mdpr"
                with open(nouArxiuMdpr24, "w") as f:
-                  f.write(trans)
+                  f.write(nouJson)
 
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 print(" Creació de nous plans de treball LOE24")

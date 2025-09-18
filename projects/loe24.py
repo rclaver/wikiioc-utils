@@ -99,10 +99,7 @@ def maqueado(value):
    value = value.replace(",'", ",\"")
    value = value.replace("':", "\":")
    # elimina caracters duplicats
-   value = value.replace("\\\"", "\"")
-   value = value.replace("\\\\\"", "\\\"")
-   value = value.replace("\\\\\\\"", "\"")
-   value = value.replace("\\\\\\\\", "\\\\")
+   value = value.replace("\\\\", "\\")
    value = value.replace("\"\"[", "\"[")
    value = value.replace("]\"\"", "]\"")
    return value
@@ -175,7 +172,7 @@ def inici():
          dades = carregaArxiuMdprLOE(key)
          if (dades):
             trans = process(dades)
-            #trans = maqueado(str(trans))
+            trans = maqueado(str(trans))
             nouJson = '{"main":' + trans + '}'
             with open(llista[key], "w") as f:
                f.write(nouJson)

@@ -17,16 +17,16 @@ Created on Fri Jul  4 20:31:39 2025
 
 import json, os, shutil
 
-dirBase0 = "/home/wikidev/wiki18"
-dirBase1 = f"{dirBase0}/data"
-dirBase2 = "documents_fp/plans_de_treball"
+dirBase0 = "/home/rafael/projectes/wikiioc-utils/projects"
+dirBase1 = f"{dirBase0}/dades"
+dirBase2 = "docu_pt"
 
 arxiuMdpr = "meta.mdpr"
 dirMdp = "mdprojects"
 dataDir = [dirMdp,"media","pages"]
 tipusProjecteLoe = "ptfploe"
 tipusProjecteLoe24 = "ptfploe24"
-continguts = f"{dirBase0}/lib/plugins/wikiiocmodel/projects/ptfploe24/metadata/plantilles/continguts.txt"
+continguts = f"{dirBase0}/dades/continguts.txt"
 llistaProjectes = "llistaPTLOE.txt"
 
 # Taula de equivalències ("original LOE": "destí LOE24")

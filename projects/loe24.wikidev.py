@@ -15,7 +15,7 @@ Created on Fri Jul  4 20:31:39 2025
       "/home/dokuwiki/wiki18/data/[mdprojects|media|pages]/documents_fp/plans_de_treball"
 """
 
-import json, os, shutil
+import json, os, shutil, re
 
 dirBase0 = "/home/wikidev/wiki18"
 dirBase1 = f"{dirBase0}/data"
@@ -23,7 +23,7 @@ dirBase2 = "documents_fp/plans_de_treball"
 
 arxiuMdpr = "meta.mdpr"
 dirMdp = "mdprojects"
-dataDir = [dirMdp,"media","pages"]
+dataDir = [dirMdp, "media", "pages"]
 tipusProjecteLoe = "ptfploe"
 tipusProjecteLoe24 = "ptfploe24"
 continguts = f"{dirBase0}/lib/plugins/wikiiocmodel/projects/ptfploe24/metadata/plantilles/continguts.txt"
@@ -146,17 +146,19 @@ def maqueado(value):
    # elimina espais
    value = value.replace(": ", ":")
    value = value.replace(", ", ",")
+   # preserva \' (pas 1)
+   value = value.replace(r"\'", "~~")
    # canvia cometes simples per dobles
-   value = value.replace("{'", "{\"")
-   value = value.replace("'}", "\"}")
-   value = value.replace("':'", "\":\"")
-   value = value.replace("','", "\",\"")
-   value = value.replace(",'", ",\"")
-   value = value.replace("':", "\":")
+   value = re.sub("(')(.*?)(')", '"\\2"', value)
+   # escapa /
+   value = value.replace(r"/", "\/")
    # elimina caracters duplicats
-   value = value.replace("\\\\", "\\")
-   value = value.replace("\"\"[", "\"[")
-   value = value.replace("]\"\"", "]\"")
+   value = value.replace(r'""[', "[")
+   value = value.replace(r']""', "]")
+   value = value.replace(r'\\"', '"')
+   value = value.replace(r'\\', chr(92))
+   # preserva \' (pas 2)
+   value = value.replace(r"~~", "'")
    return value
 
 """

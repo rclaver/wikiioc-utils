@@ -27,6 +27,7 @@ dataDir = [dirMdp, "media", "pages"]
 tipusProjecteLoe = "ptfploe"
 tipusProjecteLoe24 = "ptfploe24"
 continguts = f"{dirBase0}/lib/plugins/wikiiocmodel/projects/ptfploe24/metadata/plantilles/continguts.txt"
+systemMdpr = f"{dirBase0}/python_utilities/data/ptfploe24/_wikiIocSystem_.mdpr"
 llistaProjectes = "llistaPTLOE.txt"
 
 # Taula de equivalències ("original LOE": "destí LOE24")
@@ -86,6 +87,8 @@ def duplicaProjecte(pLoe, pLoe24):
          # copia el contingut del directori LOE al nou directori LOE24
          if (dd == "pages"):
             shutil.copyfile(continguts, f'{dataDirLoe24}/continguts.txt')
+         elif (dd == dirMdp):
+            shutil.copyfile(systemMdpr, f'{dataDirLoe24}/_wikiIocSystem_.mdpr')
          else:
             dirlist = os.listdir(dataDirLoe)
             for f in dirlist:

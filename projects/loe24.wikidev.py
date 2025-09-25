@@ -149,16 +149,20 @@ def maqueado(value):
    # preserva \' (pas 1)
    value = value.replace(r"\'", "~~")
    # canvia cometes simples per dobles
-   value = re.sub("(')(.*?)(')", '"\\2"', value)
+   value = re.sub("(')(.[^,\"']*?)(?:')(:('|[0-9]*))", '"\\2"\\3', value)
+   value = re.sub("(:)(')(.[^,\"']*?)(')([,|}])", '\\1"\\3"\\5', value)
+   value = value.replace(r":'',", ':"",')
    # escapa /
    value = value.replace(r"/", "\/")
    # elimina caracters duplicats
-   value = value.replace(r'""[', "[")
-   value = value.replace(r']""', "]")
-   value = value.replace(r'\\"', '"')
    value = value.replace(r'\\', chr(92))
+   value = value.replace(':\'"[', ':"[')
+   value = value.replace("]\"',", ']",')
    # preserva \' (pas 2)
    value = value.replace(r"~~", "'")
+   #paraules reservades
+   value = value.replace("True", "true")
+   value = value.replace("False", "false")
    return value
 
 """

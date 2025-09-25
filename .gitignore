@@ -10,3 +10,5 @@ projects/data/
 .venv
 .spyproject
 __pycache__/
+/nbproject/
+/.ropeproject/

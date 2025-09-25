@@ -23,7 +23,7 @@ dirBase2 = "documents_fp/plans_de_treball"
 
 arxiuMdpr = "meta.mdpr"
 dirMdp = "mdprojects"
-dataDir = [dirMdp,"media","pages"]
+dataDir = [dirMdp, "media", "pages"]
 tipusProjecteLoe = "ptfploe"
 tipusProjecteLoe24 = "ptfploe24"
 continguts = f"{dirBase0}/lib/plugins/wikiiocmodel/projects/ptfploe24/metadata/plantilles/continguts.txt"

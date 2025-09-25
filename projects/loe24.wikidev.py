@@ -15,7 +15,7 @@ Created on Fri Jul  4 20:31:39 2025
       "/home/dokuwiki/wiki18/data/[mdprojects|media|pages]/documents_fp/plans_de_treball"
 """
 
-import json, os, shutil
+import json, os, shutil, re
 
 dirBase0 = "/home/wikidev/wiki18"
 dirBase1 = f"{dirBase0}/data"
@@ -27,6 +27,7 @@ dataDir = [dirMdp,"media","pages"]
 tipusProjecteLoe = "ptfploe"
 tipusProjecteLoe24 = "ptfploe24"
 continguts = f"{dirBase0}/lib/plugins/wikiiocmodel/projects/ptfploe24/metadata/plantilles/continguts.txt"
+systemMdpr = f"{dirBase0}/python/_wikiIocSystem_.mdpr"
 llistaProjectes = "llistaPTLOE.txt"
 
 # Taula de equivalències ("original LOE": "destí LOE24")
@@ -86,6 +87,8 @@ def duplicaProjecte(pLoe, pLoe24):
          # copia el contingut del directori LOE al nou directori LOE24
          if (dd == "pages"):
             shutil.copyfile(continguts, f'{dataDirLoe24}/continguts.txt')
+         elif (dd == dirMdp):
+            shutil.copyfile(systemMdpr, f'{dataDirLoe24}/_wikiIocSystem_.mdpr')
          else:
             dirlist = os.listdir(dataDirLoe)
             for f in dirlist:
@@ -94,7 +97,6 @@ def duplicaProjecte(pLoe, pLoe24):
       return True
    else:
       return False
-
 
 """
 Verifica que el projecte LOE existeix, està sencer i elimina, si existeixen, els corresponents directoris LOE24
@@ -146,17 +148,23 @@ def maqueado(value):
    # elimina espais
    value = value.replace(": ", ":")
    value = value.replace(", ", ",")
+   # preserva \' (pas 1)
+   value = value.replace(r"\'", "~~")
    # canvia cometes simples per dobles
-   value = value.replace("{'", "{\"")
-   value = value.replace("'}", "\"}")
-   value = value.replace("':'", "\":\"")
-   value = value.replace("','", "\",\"")
-   value = value.replace(",'", ",\"")
-   value = value.replace("':", "\":")
+   value = re.sub("(')(.[^,\"']*?)(?:')(:('|[0-9]*))", '"\\2"\\3', value)
+   value = re.sub("(:)(')(.[^,\"']*?)(')([,|}])", '\\1"\\3"\\5', value)
+   value = value.replace(r":'',", ':"",')
+   # escapa /
+   value = value.replace(r"/", "\/")
    # elimina caracters duplicats
-   value = value.replace("\\\\", "\\")
-   value = value.replace("\"\"[", "\"[")
-   value = value.replace("]\"\"", "]\"")
+   value = value.replace(r'\\', chr(92))
+   value = value.replace(':\'"[', ':"[')
+   value = value.replace("]\"',", ']",')
+   # preserva \' (pas 2)
+   value = value.replace(r"~~", "'")
+   #paraules reservades
+   value = value.replace("True", "true")
+   value = value.replace("False", "false")
    return value
 
 """

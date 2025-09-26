@@ -174,7 +174,7 @@ def maqueado(value):
 Verifica si el valor donat és un json
 """
 def isJson(data):
-   if (isinstance(data, dict) or isinstance(data, list)):
+   if (isinstance(data, (dict, list))):
       return True
    elif (isinstance(data, int) or data.isnumeric()):
       return False
@@ -182,10 +182,9 @@ def isJson(data):
       return False
    else:
       try:
-         json.loads(data)
+         return isinstance(json.loads(data), (dict, list))
       except (ValueError, TypeError):
          return False
-      return True
 
 """
 Verifica si existeix la variable donada. Si existeix retorna aquesta variable

@@ -38,17 +38,26 @@ LANG=C.UTF-8
 C_NONE="\033[0m"
 CB_YLW="\033[1;33m"
 
-dirBase0="/home/wikidev/wiki18"
-dirBase1="${dirBase0}/data"
-dirBase2="documents_fp/plans_de_treball"
-
 arxiuMdpr="meta.mdpr"
 dataDir=("mdprojects" "media" "pages")
 tipusProjecteLoe="ptfploe"
 tipusProjecteLoe24="ptfploe24"
-continguts="${dirBase0}/lib/plugins/wikiiocmodel/projects/ptfploe24/metadata/plantilles/continguts.txt"
 llistaArxius="llistaPTLOE.txt"
 log="importLOEtoLOE24.log"
+
+host=`hostname`
+if [[ "$host" == "anaconda" ]]; then
+   dirBase0="/home/rafael/projectes/wikiioc-utils/projects"
+   dirBase1="${dirBase0}/dades"
+   dirBase2="docu_pt"
+   continguts="${dirBase0}/dades/continguts.txt"
+else
+   dirBase="/home/wikidev"
+   dirBase0="${dirBase}/wiki18"
+   dirBase1="${dirBase0}/data"
+   dirBase2="documents_fp/plans_de_treball"
+   continguts="${dirBase0}/lib/plugins/wikiiocmodel/projects/ptfploe24/metadata/plantilles/continguts.txt"
+fi
 
 declare -a arrayOrigen
 
@@ -292,11 +301,13 @@ function processaArrayMdprLoe() {
    local cadenaComp e valor
    local iComp=0  #indicador de 'valor' compost (conté sub-elements json)
    local claud=0  #indicador de nivell de sub-element json (nombre de claudàtors oberts)
+   local array=$1
 
-   for e in "${arrayOrigen[@]}"; do
+   for e in "${array[@]}"; do
       valor=${e#*:}  # extreu la part posterior al primer signe ":"
-      # la part 'valor' és una cadena simple sense sub-elements json
+
       if [[ $iComp == 0 ]]; then
+         # la part 'valor' és una cadena simple sense sub-elements json
          if [[ $valor == '"[]"' ]]; then
             processaJsonFinal "$e"
          elif [[ ! $e =~ "[" ]]; then
@@ -353,7 +364,7 @@ for parella in $llista; do
          echo -e "\n-----------\narrayOrigen\n-----------" >> $log; for e in "${arrayOrigen[@]}"; do echo -e "\t$e" >> $log; done; echo >> $log
 
          jsonFinal="{\"main\":{"
-         processaArrayMdprLoe
+         processaArrayMdprLoe $arrayOrigen
 
          echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
          echo -e "RESULTAT per a ${projecteLoe24}"

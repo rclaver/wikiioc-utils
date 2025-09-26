@@ -18,7 +18,7 @@ Created on Fri Jul  4 20:31:39 2025
 import json, os, shutil, re
 
 hostname = os.uname().nodename
-dirBase  = "/home/{hostname}"
+dirBase  = f"/home/{hostname}"
 dirBase0 = f"{dirBase}/wiki18"
 dirBase1 = f"{dirBase0}/data"
 dirBase2 = "documents_fp/plans_de_treball"

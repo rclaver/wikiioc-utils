@@ -17,18 +17,21 @@ Created on Fri Jul  4 20:31:39 2025
 
 import json, os, shutil, re
 
-dirBase0 = "/home/wikidev/wiki18"
+hostname = os.uname().nodename
+dirBase  = f"/home/{hostname}"
+dirBase0 = f"{dirBase}/wiki18"
 dirBase1 = f"{dirBase0}/data"
 dirBase2 = "documents_fp/plans_de_treball"
+continguts = f"{dirBase0}/lib/plugins/wikiiocmodel/projects/ptfploe24/metadata/plantilles/continguts.txt"
+systemMdpr = f"{dirBase}/python_utilities/data/ptfploe24/_wikiIocSystem_.mdpr"
+logfile = f"{dirBase}/python_utilities/loe24_py.log"
+llistaProjectes = "llistaPTLOE.txt"
 
 arxiuMdpr = "meta.mdpr"
 dirMdp = "mdprojects"
 dataDir = [dirMdp, "media", "pages"]
 tipusProjecteLoe = "ptfploe"
 tipusProjecteLoe24 = "ptfploe24"
-continguts = f"{dirBase0}/lib/plugins/wikiiocmodel/projects/ptfploe24/metadata/plantilles/continguts.txt"
-systemMdpr = f"{dirBase0}/python_utilities/data/ptfploe24/_wikiIocSystem_.mdpr"
-llistaProjectes = "llistaPTLOE.txt"
 
 # Taula de equivalències ("original LOE": "destí LOE24")
 taulaEquiv = {
@@ -97,7 +100,6 @@ def duplicaProjecte(pLoe, pLoe24):
       return True
    else:
       return False
-
 
 """
 Verifica que el projecte LOE existeix, està sencer i elimina, si existeixen, els corresponents directoris LOE24
@@ -172,7 +174,7 @@ def maqueado(value):
 Verifica si el valor donat és un json
 """
 def isJson(data):
-   if (isinstance(data, dict) or isinstance(data, list)):
+   if (isinstance(data, (dict, list))):
       return True
    elif (isinstance(data, int) or data.isnumeric()):
       return False
@@ -180,10 +182,9 @@ def isJson(data):
       return False
    else:
       try:
-         json.loads(data)
+         return isinstance(json.loads(data), (dict, list))
       except (ValueError, TypeError):
          return False
-      return True
 
 """
 Verifica si existeix la variable donada. Si existeix retorna aquesta variable
@@ -211,6 +212,10 @@ def cercaEquiv(taula, origen):
    desti = taula.get(origen)
    return desti if desti else origen
 
+def log(dades):
+   with open(logfile, "a") as f:
+      f.write(dades)
+
 """
  Procés principal
 """
@@ -232,15 +237,18 @@ def process(dades, arrayTrans=None):
          if (isinstance(value, dict)):
             parcial = process(value, arrayTrans)
          else:
-            if (not isinstance(value, list)):
-               value = json.loads(value)
-            p = "["
-            for k in value:
-               pk = process(k, arrayTrans)
-               p += json.dumps(pk) + ","
-            p = p.rstrip(",") + "]"
-            p = p.replace('"', '\\"')
-            parcial[keyTrans] = '\"' + p + '\"'
+            try:
+               if (not isinstance(value, list)):
+                  value = json.loads(value)
+               p = "["
+               for k in value:
+                  pk = process(k, arrayTrans)
+                  p += json.dumps(pk) + ","
+               p = p.rstrip(",") + "]"
+               p = p.replace('"', '\\"')
+               parcial[keyTrans] = '\"' + p + '\"'
+            except Exception as e:
+               log(f"\n------------\ndef process\n------------\nERROR: {e}\n- dades\n"+str(dades)+f"\n- key: {key}\n- value: {value}")
 
          arrayTrans = None
 
@@ -250,8 +258,12 @@ def process(dades, arrayTrans=None):
 bucle principal per a tots els arxius consignats a la llista d'arxius
 """
 def inici():
+   if os.path.exists(logfile):
+      os.remove(logfile)
+
    llista = obteLlistaProjectes()
    print("llista de projectes", llista)
+
    if (llista):
       for projectLoe in llista:
          projectLoe24 = llista[projectLoe]
@@ -259,6 +271,7 @@ def inici():
          if (duplicaProjecte(projectLoe, projectLoe24)):
             dades = carregaArxiuMdprLOE(projectLoe)
             if (dades):
+               log(f"\n----------------------\nprojectLoe: {projectLoe}\n----------------------\ndades\n{dades}\n")
                trans = process(dades)
                trans = maqueado(str(trans))
                nouJson = '{"main":' + trans + '}'

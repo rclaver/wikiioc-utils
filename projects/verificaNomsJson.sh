@@ -20,22 +20,19 @@ fi
 
 function cercar_json() {
    local directori="$1"
-   echo "ruta: $directori"
+   echo -e "\n${CB_BLU}ruta base:${CB_YLW} ${directori}${C_NONE}\n"
 
-   find "$directori" -type f -name "*.json" | while IFS=   read -r arxiu; do
+   find "$directori" -type f -name "*.json" | while IFS= read -r arxiu; do
       local dir_arxiu=$(dirname "$arxiu")
       local dir_mig=${dir_arxiu##"${dirBase}/"}
-      dir_mig=${dir_mig/\//_}
+      dir_mig=${dir_mig//\//_}
       local nom_arxiu=$(basename "$arxiu")
 
-      #echo -e "\n${CB_CYN}Ruta:${C_NONE} $dir_arxiu"
-      #echo -e "${CB_CYN}Mig:${C_NONE} $dir_mig"
-      #echo -e "${CB_WHT}Arxiu JSON:${C_NONE} $nom_arxiu"
-
-      if [[ "${dir_mig}.json" == "$nom_arxiu" ]]; then
-         echo "arxiu $nom_arxiu CORRECTE"
-      else
-         echo "Nom INCORRECTE a l'arxiu $dir_arxiu/ $nom_arxiu"
+      if [[ "${dir_mig}.json" != "$nom_arxiu" ]]; then
+         echo -e "${CB_BLU}Nom INCORRECTE:"
+         echo -e "${CB_CYN}   ruta:${C_NONE} ${dir_arxiu}/"
+         echo -e "${CB_CYN}   nom desitjat:${C_NONE} ${dir_mig}.json"
+         echo -e "${CB_CYN}   nom actual..:${C_NONE} ${nom_arxiu}"
       fi
    done
 }
@@ -43,8 +40,8 @@ function cercar_json() {
 ###
 # inici
 #
-echo -e "+-------------------------------------------------------------------------------+"
+echo -e "${CB_WHT}+-------------------------------------------------------------------------------+"
 echo -e "| Verificació de la correcció dels noms de fitxer JSON al directori data/media/ |"
-echo -e "+-------------------------------------------------------------------------------+"
+echo -e "+-------------------------------------------------------------------------------+${C_NONE}"
 
 cercar_json "$dirBase"

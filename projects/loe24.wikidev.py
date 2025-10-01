@@ -95,7 +95,9 @@ def duplicaProjecte(pLoe, pLoe24):
          else:
             dirlist = os.listdir(dataDirLoe)
             for f in dirlist:
-               shutil.copyfile(f"{dataDirLoe}/{f}", f'{dataDirLoe24}/{f}')
+               if (not (f.endswith(".json") or f.endswith(".zip"))):
+                  # ignora els arxius generats per processos sol·licitats per l'usuari
+                  shutil.copyfile(f"{dataDirLoe}/{f}", f'{dataDirLoe24}/{f}')
 
       return True
    else:
@@ -113,7 +115,7 @@ def verificaProjecte(pLoe, pLoe24):
          return False
 
       if (os.path.exists(dataDirLoe24)):
-         print("Atenció: el directori", dataDirLoe24, "ja existeix. Procedim a eliminar-lo")
+         print("Atenció:", dataDirLoe24, "ja existeix. Procedim a eliminar-lo")
          eliminaDirectori(dataDirLoe24)
 
    return True
@@ -151,6 +153,8 @@ def maqueado(value):
    # elimina espais
    value = value.replace(": ", ":")
    value = value.replace(", ", ",")
+   # elimina la programació
+   value = re.sub("([\"\']nsProgramacio[\"\']:[\"\'])(.*?)([\"\'],)", "\\1\\3", value)
    # preserva \' (pas 1)
    value = value.replace(r"\'", "~~")
    # canvia cometes simples per dobles
